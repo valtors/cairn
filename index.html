@@ -7,72 +7,241 @@
 <meta name="description" content="agent wayfinding. agents leave cairns to mark what they learned.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
   *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{font-family:'Inter',sans-serif;background:#f5f0e8;color:#1a1a1a;line-height:1.65;font-size:17px;overflow-x:hidden;}
+  :root{
+    --bg:#fafafa;
+    --text:#0b1015;
+    --muted:#6b7280;
+    --accent:#0b1015;
+    --line:#e5e7eb;
+    --surface:#f3f4f6;
+    --stone:#8a6d3b;
+    --green:#2d5a3e;
+  }
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
   #bg-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;}
   .content{position:relative;z-index:1;}
-  .hero{text-align:center;padding:160px 24px 100px;max-width:680px;margin:0 auto;}
-  .hero h1{font-size:48px;font-weight:700;letter-spacing:-2px;margin-bottom:18px;color:#1a1a1a;}
-  .hero h1 em{font-style:italic;color:#8a6d3b;background:rgba(138,109,59,0.12);padding:0 6px;border-radius:4px;}
-  .hero p{font-size:18px;color:#777;max-width:480px;margin:0 auto;}
-  .story{max-width:620px;margin:0 auto;padding:20px 24px;}
-  .story-section{margin-bottom:64px;}
-  .divider{height:1px;background:#d4c9b8;margin:48px auto;max-width:500px;}
-  .turn{margin-bottom:40px;}
-  .speaker{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .speaker .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-  .speaker .label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#999;}
-  .msg{font-size:18px;line-height:1.7;color:#2a2a2a;}
-  .msg code{font-family:'JetBrains Mono',monospace;font-size:15px;background:rgba(138,109,59,0.12);padding:2px 6px;border-radius:4px;color:#8a6d3b;}
-  .punchline{text-align:center;padding:80px 24px;max-width:620px;margin:0 auto;}
-  .punchline h2{font-size:32px;font-weight:600;color:#1a1a1a;margin-bottom:36px;line-height:1.35;}
-  .punchline h2 em{font-style:italic;color:#8a6d3b;background:rgba(138,109,59,0.12);padding:0 6px;border-radius:4px;}
-  .punchline a{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1a1a1a;text-decoration:none;border-bottom:2px solid #8a6d3b;padding-bottom:4px;transition:color .2s,border-color .2s;}
-  .punchline a:hover{color:#8a6d3b;border-color:#1a1a1a;}
-  .footer{text-align:center;padding:40px 24px 100px;font-size:13px;color:#aaa;font-family:'JetBrains Mono',monospace;}
-  .dot-you{background:#8a6d3b;}
-  .dot-agent{background:#4a7a5e;}
-  .dot-cairn{background:#4a7a5e;}
-  @media(max-width:600px){.hero h1{font-size:34px;}.story,.punchline{padding:32px 16px;}.hero{padding:120px 16px 80px;}.punchline h2{font-size:26px;}}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(250,250,250,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  nav .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px;letter-spacing:-0.5px;}
+  nav .logo .mark{width:12px;height:12px;background:var(--stone);border-radius:2px;transform:rotate(45deg);}
+  nav .links{display:flex;gap:28px;align-items:center;}
+  nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;}
+  nav .links a:hover{color:var(--text);}
+  nav .cta{background:var(--text);color:#fff;padding:8px 20px;font-size:14px;font-weight:500;border-radius:0;text-decoration:none;transition:opacity .2s;}
+  nav .cta:hover{opacity:0.85;}
+
+  .hero{padding:140px 32px 80px;max-width:960px;margin:0 auto;text-align:left;}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--surface);border:1px solid var(--line);border-radius:100px;font-size:13px;color:var(--muted);font-weight:500;margin-bottom:32px;}
+  .chip .pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease-in-out infinite;}
+  @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .hero h1{font-size:64px;font-weight:500;letter-spacing:-3px;line-height:1.05;margin-bottom:24px;}
+  .hero h1 .accent{color:var(--stone);font-style:italic;}
+  .hero p{font-size:20px;color:var(--muted);max-width:560px;line-height:1.5;margin-bottom:40px;}
+  .hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+  .btn-primary{background:var(--text);color:#fff;padding:12px 28px;font-size:15px;font-weight:500;border:none;cursor:pointer;text-decoration:none;display:inline-block;transition:opacity .2s;border-radius:0;}
+  .btn-primary:hover{opacity:0.85;}
+  .btn-code{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:var(--surface);border:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text);border-radius:0;}
+  .btn-code span{color:var(--muted);}
+
+  .logos{padding:40px 32px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;}
+  .logos p{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;font-weight:600;}
+  .logos .row{display:flex;justify-content:center;gap:48px;align-items:center;flex-wrap:wrap;}
+  .logos .row span{font-size:18px;font-weight:600;color:#9ca3af;letter-spacing:-0.5px;}
+
+  .section{padding:100px 32px;max-width:960px;margin:0 auto;}
+  .section-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .section-label .num{color:var(--stone);}
+  .section h2{font-size:40px;font-weight:500;letter-spacing:-2px;line-height:1.1;margin-bottom:16px;}
+  .section h2 .accent{color:var(--stone);font-style:italic;}
+  .section > p{font-size:18px;color:var(--muted);max-width:560px;line-height:1.5;margin-bottom:48px;}
+
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:0;}
+  .feature{padding:40px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .2s;}
+  .feature:nth-child(2n){border-right:none;}
+  .feature:nth-last-child(-n+2){border-bottom:none;}
+  .feature:hover{background:var(--surface);}
+  .feature .icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;}
+  .feature h3{font-size:18px;font-weight:600;margin-bottom:8px;letter-spacing:-0.3px;}
+  .feature p{font-size:15px;color:var(--muted);line-height:1.5;}
+
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:0;margin-top:48px;}
+  .compare > div{padding:40px;background:var(--bg);}
+  .compare .col-legacy{background:#fdfdfd;}
+  .compare .col-ours{background:var(--surface);}
+  .compare h3{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:16px;font-weight:700;}
+  .compare .col-ours h3{color:var(--stone);}
+  .compare p{font-size:16px;color:var(--text);line-height:1.5;margin-bottom:20px;}
+  .compare ul{list-style:none;}
+  .compare li{font-size:15px;color:var(--muted);padding:6px 0;padding-left:24px;position:relative;line-height:1.4;}
+  .compare .col-legacy li:before{content:'x';position:absolute;left:0;color:#d1d5db;font-weight:700;}
+  .compare .col-ours li:before{content:'+';position:absolute;left:0;color:var(--green);font-weight:700;}
+
+  .code-block{background:#0b1015;color:#e8e2d8;padding:32px;border-radius:0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.7;overflow-x:auto;margin-top:48px;position:relative;}
+  .code-block .lang{position:absolute;top:12px;right:16px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;}
+  .code-block .comment{color:#6b7280;}
+  .code-block .cmd{color:#d4843a;}
+  .code-block .str{color:#5a8a6e;}
+  .code-block .kw{color:#e89645;}
+
+  .punchline{padding:120px 32px;text-align:center;max-width:800px;margin:0 auto;}
+  .punchline h2{font-size:48px;font-weight:500;letter-spacing:-2px;line-height:1.1;margin-bottom:40px;}
+  .punchline h2 .accent{color:var(--stone);font-style:italic;}
+  .punchline .actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+
+  footer{padding:40px 32px;border-top:1px solid var(--line);text-align:center;}
+  footer p{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  @media(max-width:768px){
+    .hero h1{font-size:40px;}
+    .section h2{font-size:28px;}
+    .punchline h2{font-size:32px;}
+    .features{grid-template-columns:1fr;}
+    .feature{border-right:none;}
+    .compare{grid-template-columns:1fr;}
+    nav .links{display:none;}
+    .hero,.section,.punchline{padding:60px 20px;}
+  }
 </style>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
 <div class="content">
+  <nav>
+    <div class="logo"><div class="mark"></div>cairn</div>
+    <div class="links">
+      <a href="#features">features</a>
+      <a href="#compare">vs vector db</a>
+      <a href="https://github.com/valtors/cairn">github</a>
+      <a href="https://github.com/valtors/cairn" class="cta">star on github</a>
+    </div>
+  </nav>
+
   <div class="hero">
-    <h1>your agent has <em>amnesia</em></h1>
-    <p>every conversation starts from zero. nothing remembered, nothing learned.</p>
-  </div>
-  <div class="story">
-    <div class="story-section" id="s1">
-      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">what did we talk about last week?</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">i don't have access to previous conversations. each session is independent.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">so you forgot the entire architecture we designed?</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">yes. and the debugging session. and the deployment plan. and your preferences.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">that's insane.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">it's the default.</div></div>
-    </div>
-    <div class="divider"></div>
-    <div class="story-section" id="s2">
-      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">ok. so what if the agent could remember?</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">it can. <code>cairn remember "user prefers dark mode"</code></div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">that fact now exists forever. or until it's stale.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg"><code>cairn recall "what os does tamish use"</code> returns it. with timestamps.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg"><code>cairn forget --dry-run</code> shows what's decayed. old facts fade.</div></div>
-      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">one sqlite file. no server. no cloud. zero llm calls.</div></div>
+    <div class="chip"><span class="pulse"></span> agent wayfinding, not just memory</div>
+    <h1>your agent forgot <span class="accent">everything</span></h1>
+    <p>every conversation starts from zero. cairn gives agents persistent, structured, bi-temporal memory. one sqlite file. no server. zero llm calls.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/valtors/cairn" class="btn-primary">start building</a>
+      <div class="btn-code"><span>$</span> cargo install cairn</div>
     </div>
   </div>
+
+  <div class="logos">
+    <p>built for agents that need to remember</p>
+    <div class="row">
+      <span>claude</span>
+      <span>cursor</span>
+      <span>codex</span>
+      <span>opencode</span>
+      <span>any mcp client</span>
+    </div>
+  </div>
+
+  <div class="section" id="features">
+    <div class="section-label"><span class="num">01</span> features</div>
+    <h2>six primitives. <span class="accent">one file.</span></h2>
+    <p>focused tools for storing, recalling, and forgetting what agents learn. no cloud, no server, no llm dependency.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="icon">+</div>
+        <h3>bi-temporal storage</h3>
+        <p>every fact has valid-from and transaction time. track what was true when, not just what's true now.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">~</div>
+        <h3>decay-based forgetting</h3>
+        <p>stale facts fade automatically. confidence decays over time. agents forget what no longer matters.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">*</div>
+        <h3>zero-llm extraction</h3>
+        <p>keyword extraction and regex patterns. no api calls, no tokens spent. facts are parsed, not generated.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">@</div>
+        <h3>graph traversal query</h3>
+        <p>follow edges between facts. find related context by walking the memory graph, not just keyword matching.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">=</div>
+        <h3>vector clocks</h3>
+        <p>conflict detection across sessions. concurrent writes are tracked, not silently overwritten.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">^</div>
+        <h3>one sqlite file</h3>
+        <p>the entire memory layer is one sqlite database. copy it, back it up, inspect it with any sqlite tool.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="compare">
+    <div class="section-label"><span class="num">02</span> vs legacy</div>
+    <h2>a vector db stores chunks. <span class="accent">cairn stores facts.</span></h2>
+    <p>vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire.</p>
+    <div class="compare">
+      <div class="col-legacy">
+        <h3>vector db</h3>
+        <p>stores chunks. returns chunks. each session starts from zero.</p>
+        <ul>
+          <li>requires a running server</li>
+          <li>cosine similarity is the only tool</li>
+          <li>no concept of time or staleness</li>
+          <li>chunks can't contradict or evolve</li>
+          <li>costs scale with embedding calls</li>
+        </ul>
+      </div>
+      <div class="col-ours">
+        <h3>cairn</h3>
+        <p>facts that evolve. knowledge that merges, contradicts, and gets forgotten across sessions.</p>
+        <ul>
+          <li>one sqlite file, no server needed</li>
+          <li>graph traversal + keyword search</li>
+          <li>bi-temporal: tracks when facts were true</li>
+          <li>conflict detection via vector clocks</li>
+          <li>zero llm calls for extraction</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="lang">bash</span>
+<span class="comment"># install</span>
+<span class="cmd">cargo install cairn</span>
+
+<span class="comment"># store a fact</span>
+<span class="cmd">cairn remember</span> <span class="str">"user prefers dark mode"</span>
+
+<span class="comment"># recall with temporal awareness</span>
+<span class="cmd">cairn recall</span> <span class="str">"what os does tamish use"</span>
+<span class="kw">-></span> macos (closed 2024-03-15) | linux (active)
+
+<span class="comment"># see what's stale</span>
+<span class="cmd">cairn forget</span> --dry-run
+
+<span class="comment"># import into any mcp client</span>
+<span class="cmd">cairn mcp</span> <span class="str">--stdio</span>
+    </div>
+  </div>
+
   <div class="punchline">
-    <h2>agents leave cairns to mark <em>what they learned</em></h2>
-    <a href="https://github.com/valtors/cairn">github</a>
+    <h2>agents leave cairns to mark <span class="accent">what they learned</span></h2>
+    <div class="actions">
+      <a href="https://github.com/valtors/cairn" class="btn-primary">star on github</a>
+      <div class="btn-code"><span>$</span> cargo install cairn</div>
+    </div>
   </div>
-  <div class="footer">mit license. rust. one file. no dependencies on you.</div>
+
+  <footer>
+    <p>mit license. rust. one file. no dependencies on you.</p>
+  </footer>
 </div>
 <script>
 var cScene, cRenderer, cCamera, cPoints, cMat, cLines, cClock;
@@ -91,26 +260,26 @@ function initCairn() {
   cRenderer.setSize(window.innerWidth, window.innerHeight);
   cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  var COUNT = 120;
+  var COUNT = 100;
   var positions = new Float32Array(COUNT * 3);
   var colors = new Float32Array(COUNT * 3);
   var sizes = new Float32Array(COUNT);
   var phases = new Float32Array(COUNT);
 
-  var cStone = new THREE.Color('#6b5530');
+  var cStone = new THREE.Color('#8a6d3b');
   var cGreen = new THREE.Color('#2d5a3e');
-  var cWarm = new THREE.Color('#a07840');
+  var cDark = new THREE.Color('#3a3530');
 
   for (var i = 0; i < COUNT; i++) {
     positions[i*3] = (Math.random() - 0.5) * 120;
     positions[i*3+1] = (Math.random() - 0.5) * 80;
     positions[i*3+2] = (Math.random() - 0.5) * 40;
     var r = Math.random();
-    var c = r > 0.6 ? cStone : (r > 0.35 ? cWarm : cGreen);
+    var c = r > 0.6 ? cStone : (r > 0.3 ? cDark : cGreen);
     colors[i*3] = c.r;
     colors[i*3+1] = c.g;
     colors[i*3+2] = c.b;
-    sizes[i] = Math.random() * 3 + 1.5;
+    sizes[i] = Math.random() * 2.5 + 1;
     phases[i] = Math.random() * Math.PI * 2;
   }
 
@@ -137,17 +306,17 @@ function initCairn() {
       'void main() {',
       '  vColor = color;',
       '  vec3 pos = position;',
-      '  pos.y += sin(uTime * 0.3 + phase) * 2.0;',
-      '  pos.x += cos(uTime * 0.2 + phase) * 1.5;',
+      '  pos.y += sin(uTime * 0.3 + phase) * 1.5;',
+      '  pos.x += cos(uTime * 0.2 + phase) * 1.0;',
       '  vec2 toMouse = uMouse - pos.xy;',
       '  float md = length(toMouse);',
-      '  float pull = smoothstep(35.0, 0.0, md) * 5.0;',
+      '  float pull = smoothstep(30.0, 0.0, md) * 4.0;',
       '  pos.xy -= normalize(toMouse + 0.001) * pull;',
       '  vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);',
       '  gl_Position = projectionMatrix * mvPos;',
       '  float pulse = (sin(uTime * 0.8 + phase) + 1.0) * 0.5;',
-      '  gl_PointSize = size * (1.5 + pulse * 0.6 + pull * 0.8) * uPixelRatio * (35.0 / -mvPos.z);',
-      '  vAlpha = 0.8 + pulse * 0.2 + pull * 0.2;',
+      '  gl_PointSize = size * (1.5 + pulse * 0.5 + pull * 0.6) * uPixelRatio * (35.0 / -mvPos.z);',
+      '  vAlpha = 0.5 + pulse * 0.2 + pull * 0.25;',
       '}'
     ].join('\n'),
     fragmentShader: [
@@ -178,11 +347,11 @@ function initCairn() {
       var dx = positions[a*3] - positions[b*3];
       var dy = positions[a*3+1] - positions[b*3+1];
       var dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 16) {
+      if (dist < 15) {
         linePositions.push(positions[a*3], positions[a*3+1], positions[a*3+2]);
         linePositions.push(positions[b*3], positions[b*3+1], positions[b*3+2]);
-        lineAlphas.push(1.0 - dist / 16);
-        lineAlphas.push(1.0 - dist / 16);
+        lineAlphas.push(1.0 - dist / 15);
+        lineAlphas.push(1.0 - dist / 15);
       }
     }
   }
@@ -202,7 +371,7 @@ function initCairn() {
     fragmentShader: [
       'varying float vAlpha;',
       'void main() {',
-      '  gl_FragColor = vec4(0.42, 0.33, 0.19, vAlpha * 0.8);',
+      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.6);',
       '}'
     ].join('\n'),
     transparent: true,
@@ -240,11 +409,11 @@ function animateCairn() {
   cMouse.y += (cTarget.y - cMouse.y) * 0.05;
   cMat.uniforms.uMouse.value.x = cMouse.x;
   cMat.uniforms.uMouse.value.y = cMouse.y;
-  cCamera.position.y = -cScrollY * 0.015;
-  cCamera.position.x = cMouse.x * 0.04;
+  cCamera.position.y = -cScrollY * 0.012;
+  cCamera.position.x = cMouse.x * 0.03;
   cCamera.lookAt(0, cCamera.position.y, 50);
-  cPoints.rotation.y = t * 0.03;
-  cLines.rotation.y = t * 0.03;
+  cPoints.rotation.y = t * 0.02;
+  cLines.rotation.y = t * 0.02;
   cRenderer.render(cScene, cCamera);
 }
 
@@ -254,71 +423,45 @@ initCairn();
 gsap.registerPlugin(ScrollTrigger);
 
 document.addEventListener('DOMContentLoaded', function() {
-  gsap.from('.hero h1', {y: 30, opacity: 0, duration: 1, ease: 'power3.out'});
+  gsap.from('.chip', {y: 20, opacity: 0, duration: 0.6, ease: 'power2.out'});
+  gsap.from('.hero h1', {y: 30, opacity: 0, duration: 1, delay: 0.1, ease: 'power3.out'});
   gsap.from('.hero p', {y: 20, opacity: 0, duration: 0.8, delay: 0.3, ease: 'power3.out'});
+  gsap.from('.hero-actions', {y: 20, opacity: 0, duration: 0.6, delay: 0.5, ease: 'power3.out'});
+  gsap.from('.logos', {opacity: 0, duration: 0.8, delay: 0.6, ease: 'power2.out'});
 
-  gsap.utils.toArray('.turn').forEach(function(turn, i) {
-    gsap.from(turn, {
-      opacity: 0,
-      y: 40,
-      duration: 0.6,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: turn,
-        start: 'top 88%',
-        toggleActions: 'play none none none'
-      }
+  gsap.utils.toArray('.feature').forEach(function(f, i) {
+    gsap.from(f, {
+      opacity: 0, y: 30, duration: 0.5, ease: 'power2.out',
+      scrollTrigger: { trigger: f, start: 'top 88%' }
     });
   });
 
-  gsap.fromTo('.divider', {
-    scaleX: 0,
-    opacity: 0
-  }, {
-    scaleX: 1,
-    opacity: 1,
-    duration: 1.2,
-    ease: 'power2.inOut',
-    scrollTrigger: {
-      trigger: '.divider',
-      start: 'top 85%',
-      toggleActions: 'play none none none'
-    }
+  gsap.from('.compare .col-legacy', {
+    opacity: 0, x: -30, duration: 0.6, ease: 'power2.out',
+    scrollTrigger: { trigger: '.compare', start: 'top 80%' }
+  });
+  gsap.from('.compare .col-ours', {
+    opacity: 0, x: 30, duration: 0.6, delay: 0.1, ease: 'power2.out',
+    scrollTrigger: { trigger: '.compare', start: 'top 80%' }
+  });
+
+  gsap.from('.code-block', {
+    opacity: 0, y: 30, duration: 0.8, ease: 'power2.out',
+    scrollTrigger: { trigger: '.code-block', start: 'top 85%' }
   });
 
   gsap.from('.punchline h2', {
-    opacity: 0,
-    y: 40,
-    duration: 0.8,
-    ease: 'power3.out',
-    scrollTrigger: {
-      trigger: '.punchline',
-      start: 'top 75%',
-      toggleActions: 'play none none none'
-    }
+    opacity: 0, y: 40, duration: 0.8, ease: 'power3.out',
+    scrollTrigger: { trigger: '.punchline', start: 'top 75%' }
+  });
+  gsap.from('.punchline .actions', {
+    opacity: 0, y: 20, duration: 0.6, delay: 0.2, ease: 'power2.out',
+    scrollTrigger: { trigger: '.punchline', start: 'top 75%' }
   });
 
-  gsap.from('.punchline a', {
-    opacity: 0,
-    y: 20,
-    duration: 0.6,
-    delay: 0.3,
-    ease: 'power2.out',
-    scrollTrigger: {
-      trigger: '.punchline',
-      start: 'top 75%',
-      toggleActions: 'play none none none'
-    }
-  });
-
-  gsap.from('.footer', {
-    opacity: 0,
-    duration: 0.6,
-    scrollTrigger: {
-      trigger: '.footer',
-      start: 'top 95%',
-      toggleActions: 'play none none none'
-    }
+  gsap.from('footer', {
+    opacity: 0, duration: 0.6,
+    scrollTrigger: { trigger: 'footer', start: 'top 95%' }
   });
 });
 </script>
