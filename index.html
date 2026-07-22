@@ -97,9 +97,9 @@ function initCairn() {
   var sizes = new Float32Array(COUNT);
   var phases = new Float32Array(COUNT);
 
-  var cStone = new THREE.Color('#8a6d3b');
-  var cGreen = new THREE.Color('#4a7a5e');
-  var cWarm = new THREE.Color('#b8975a');
+  var cStone = new THREE.Color('#6b5530');
+  var cGreen = new THREE.Color('#2d5a3e');
+  var cWarm = new THREE.Color('#a07840');
 
   for (var i = 0; i < COUNT; i++) {
     positions[i*3] = (Math.random() - 0.5) * 120;
@@ -202,7 +202,7 @@ function initCairn() {
     fragmentShader: [
       'varying float vAlpha;',
       'void main() {',
-      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.5);',
+      '  gl_FragColor = vec4(0.42, 0.33, 0.19, vAlpha * 0.8);',
       '}'
     ].join('\n'),
     transparent: true,
