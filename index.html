@@ -4,216 +4,194 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>cairn</title>
-<meta name="description" content="agent wayfinding. agents leave cairns to mark what they learned.">
+<meta name="description" content="agent wayfinding. persistent memory for ai agents. one sqlite file. zero llm calls.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-  :root{
-    --bg:#fafafa;
-    --text:#0b1015;
-    --muted:#6b7280;
-    --accent:#0b1015;
-    --line:#e5e7eb;
-    --surface:#f3f4f6;
-    --stone:#8a6d3b;
-    --green:#2d5a3e;
-  }
-  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
-  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
-  #bg-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;}
-  .content{position:relative;z-index:1;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#fff;--text:#0a0a0a;--muted:#6b7280;--accent:#0066ff;--surface:#f9fafb;--line:#e5e7eb;--terminal-bg:#0a0a0a;--terminal-text:#e5e7eb;}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(0,0,0,0.035) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0;}
+.content{position:relative;z-index:1;}
 
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(250,250,250,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
-  nav .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px;letter-spacing:-0.5px;}
-  nav .logo .mark{width:12px;height:12px;background:var(--stone);border-radius:2px;transform:rotate(45deg);}
-  nav .links{display:flex;gap:28px;align-items:center;}
-  nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;}
-  nav .links a:hover{color:var(--text);}
-  nav .cta{background:var(--text);color:#fff;padding:8px 20px;font-size:14px;font-weight:500;border-radius:0;text-decoration:none;transition:opacity .2s;}
-  nav .cta:hover{opacity:0.85;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);}
+nav .logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;letter-spacing:-0.5px;}
+nav .logo .mark{width:10px;height:10px;background:var(--accent);border-radius:2px;}
+nav .links{display:flex;gap:32px;align-items:center;}
+nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+nav .cta{background:var(--text);color:#fff;padding:9px 22px;font-size:14px;font-weight:500;text-decoration:none;transition:opacity .2s;}
+nav .cta:hover{opacity:.85;}
 
-  .hero{padding:140px 32px 80px;max-width:960px;margin:0 auto;text-align:left;}
-  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--surface);border:1px solid var(--line);border-radius:100px;font-size:13px;color:var(--muted);font-weight:500;margin-bottom:32px;}
-  .chip .pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease-in-out infinite;}
-  @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
-  .hero h1{font-size:64px;font-weight:500;letter-spacing:-3px;line-height:1.05;margin-bottom:24px;}
-  .hero h1 .accent{color:var(--stone);font-style:italic;}
-  .hero p{font-size:20px;color:var(--muted);max-width:560px;line-height:1.5;margin-bottom:40px;}
-  .hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
-  .btn-primary{background:var(--text);color:#fff;padding:12px 28px;font-size:15px;font-weight:500;border:none;cursor:pointer;text-decoration:none;display:inline-block;transition:opacity .2s;border-radius:0;}
-  .btn-primary:hover{opacity:0.85;}
-  .btn-code{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:var(--surface);border:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text);border-radius:0;}
-  .btn-code span{color:var(--muted);}
+.hero{padding:160px 40px 80px;max-width:920px;margin:0 auto;}
+.hero .eyebrow{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+.hero .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:68px;font-weight:600;letter-spacing:-3px;line-height:1.02;margin-bottom:24px;}
+.hero h1 .accent{color:var(--accent);}
+.hero .sub{font-size:20px;color:var(--muted);max-width:520px;line-height:1.5;margin-bottom:40px;}
+.hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:56px;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;}
+.btn-primary{background:var(--text);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line);}
+.btn-ghost:hover{border-color:var(--text);}
+.btn-code{font-family:'JetBrains Mono',monospace;font-size:14px;background:var(--surface);border:1px solid var(--line);color:var(--text);padding:13px 20px;}
+.btn-code span{color:var(--muted);}
 
-  .logos{padding:40px 32px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;}
-  .logos p{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;font-weight:600;}
-  .logos .row{display:flex;justify-content:center;gap:48px;align-items:center;flex-wrap:wrap;}
-  .logos .row span{font-size:18px;font-weight:600;color:#9ca3af;letter-spacing:-0.5px;}
+.terminal{background:var(--terminal-bg);border-radius:8px;overflow:hidden;max-width:680px;box-shadow:0 20px 60px rgba(0,0,0,0.08);border:1px solid #1a1a1a;}
+.terminal-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#111;}
+.terminal-bar .dots{display:flex;gap:6px;}
+.terminal-bar .dots span{width:11px;height:11px;border-radius:50%;}
+.terminal-bar .dots span:nth-child(1){background:#ff5f57;}
+.terminal-bar .dots span:nth-child(2){background:#ffbd2e;}
+.terminal-bar .dots span:nth-child(3){background:#28c940;}
+.terminal-bar .title{font-family:'JetBrains Mono',monospace;font-size:12px;color:#666;margin-left:8px;}
+.terminal-body{padding:24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.8;color:var(--terminal-text);}
+.terminal-body .prompt{color:#666;}
+.terminal-body .cmd{color:#fff;}
+.terminal-body .out{color:#888;}
+.terminal-body .accent{color:var(--accent);}
+.terminal-body .green{color:#28c940;}
+.terminal-body .cursor{display:inline-block;width:8px;height:16px;background:#fff;animation:blink 1s step-end infinite;vertical-align:text-bottom;}
+@keyframes blink{50%{opacity:0;}}
 
-  .section{padding:100px 32px;max-width:960px;margin:0 auto;}
-  .section-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-  .section-label .num{color:var(--stone);}
-  .section h2{font-size:40px;font-weight:500;letter-spacing:-2px;line-height:1.1;margin-bottom:16px;}
-  .section h2 .accent{color:var(--stone);font-style:italic;}
-  .section > p{font-size:18px;color:var(--muted);max-width:560px;line-height:1.5;margin-bottom:48px;}
+.logos{padding:40px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;}
+.logos p{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;font-weight:600;}
+.logos .row{display:flex;justify-content:center;gap:40px;align-items:center;flex-wrap:wrap;}
+.logos .row span{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;color:#9ca3af;letter-spacing:-0.3px;}
 
-  .features{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:0;}
-  .feature{padding:40px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .2s;}
-  .feature:nth-child(2n){border-right:none;}
-  .feature:nth-last-child(-n+2){border-bottom:none;}
-  .feature:hover{background:var(--surface);}
-  .feature .icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;}
-  .feature h3{font-size:18px;font-weight:600;margin-bottom:8px;letter-spacing:-0.3px;}
-  .feature p{font-size:15px;color:var(--muted);line-height:1.5;}
+.section{padding:120px 40px;max-width:920px;margin:0 auto;}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;}
+.section-label .num{color:var(--accent);}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:600;letter-spacing:-2px;line-height:1.08;margin-bottom:16px;}
+.section h2 .accent{color:var(--accent);}
+.section .desc{font-size:19px;color:var(--muted);max-width:520px;line-height:1.5;margin-bottom:56px;}
 
-  .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:0;margin-top:48px;}
-  .compare > div{padding:40px;background:var(--bg);}
-  .compare .col-legacy{background:#fdfdfd;}
-  .compare .col-ours{background:var(--surface);}
-  .compare h3{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:16px;font-weight:700;}
-  .compare .col-ours h3{color:var(--stone);}
-  .compare p{font-size:16px;color:var(--text);line-height:1.5;margin-bottom:20px;}
-  .compare ul{list-style:none;}
-  .compare li{font-size:15px;color:var(--muted);padding:6px 0;padding-left:24px;position:relative;line-height:1.4;}
-  .compare .col-legacy li:before{content:'x';position:absolute;left:0;color:#d1d5db;font-weight:700;}
-  .compare .col-ours li:before{content:'+';position:absolute;left:0;color:var(--green);font-weight:700;}
+.features{display:flex;flex-direction:column;gap:0;}
+.feature{display:flex;gap:24px;padding:32px 0;border-bottom:1px solid var(--line);align-items:start;}
+.feature:last-child{border-bottom:none;}
+.feature .num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:600;min-width:32px;padding-top:2px;}
+.feature .body h3{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;margin-bottom:6px;letter-spacing:-0.3px;}
+.feature .body p{font-size:16px;color:var(--muted);line-height:1.5;max-width:560px;}
 
-  .code-block{background:#0b1015;color:#e8e2d8;padding:32px;border-radius:0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.7;overflow-x:auto;margin-top:48px;position:relative;}
-  .code-block .lang{position:absolute;top:12px;right:16px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;}
-  .code-block .comment{color:#6b7280;}
-  .code-block .cmd{color:#d4843a;}
-  .code-block .str{color:#5a8a6e;}
-  .code-block .kw{color:#e89645;}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:48px;}
+.compare>div{padding:40px;background:var(--bg);}
+.compare .col-legacy{background:var(--surface);}
+.compare h3{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:16px;font-weight:700;}
+.compare .col-ours h3{color:var(--accent);}
+.compare p{font-size:16px;color:var(--text);line-height:1.5;margin-bottom:20px;}
+.compare ul{list-style:none;}
+.compare li{font-size:15px;color:var(--muted);padding:8px 0;padding-left:28px;position:relative;line-height:1.4;}
+.compare .col-legacy li:before{content:'x';position:absolute;left:0;color:#d1d5db;font-weight:700;}
+.compare .col-ours li:before{content:'+';position:absolute;left:0;color:#28c940;font-weight:700;}
 
-  .punchline{padding:120px 32px;text-align:center;max-width:800px;margin:0 auto;}
-  .punchline h2{font-size:48px;font-weight:500;letter-spacing:-2px;line-height:1.1;margin-bottom:40px;}
-  .punchline h2 .accent{color:var(--stone);font-style:italic;}
-  .punchline .actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.code-show{background:var(--terminal-bg);border-radius:8px;overflow:hidden;margin-top:48px;border:1px solid #1a1a1a;}
+.code-show .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#111;}
+.code-show .bar .dots{display:flex;gap:6px;}
+.code-show .bar .dots span{width:11px;height:11px;border-radius:50%;}
+.code-show .bar .dots span:nth-child(1){background:#ff5f57;}
+.code-show .bar .dots span:nth-child(2){background:#ffbd2e;}
+.code-show .bar .dots span:nth-child(3){background:#28c940;}
+.code-show .bar .title{font-family:'JetBrains Mono',monospace;font-size:12px;color:#666;margin-left:8px;}
+.code-show .body{padding:24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.8;color:var(--terminal-text);overflow-x:auto;}
+.code-show .body .comment{color:#555;}
+.code-show .body .cmd{color:#fff;}
+.code-show .body .str{color:#28c940;}
+.code-show .body .kw{color:var(--accent);}
+.code-show .body .out{color:#888;}
 
-  footer{padding:40px 32px;border-top:1px solid var(--line);text-align:center;}
-  footer p{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.punchline{padding:140px 40px;text-align:center;max-width:760px;margin:0 auto;}
+.punchline h2{font-family:'Space Grotesk',sans-serif;font-size:48px;font-weight:600;letter-spacing:-2px;line-height:1.08;margin-bottom:40px;}
+.punchline h2 .accent{color:var(--accent);}
+.punchline .actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
 
-  @media(max-width:768px){
-    .hero h1{font-size:40px;}
-    .section h2{font-size:28px;}
-    .punchline h2{font-size:32px;}
-    .features{grid-template-columns:1fr;}
-    .feature{border-right:none;}
-    .compare{grid-template-columns:1fr;}
-    nav .links{display:none;}
-    .hero,.section,.punchline{padding:60px 20px;}
-  }
+footer{padding:48px 40px;border-top:1px solid var(--line);text-align:center;}
+footer p{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);}
+
+@media(max-width:768px){
+.hero h1{font-size:40px;}
+.section h2{font-size:30px;}
+.punchline h2{font-size:32px;}
+.compare{grid-template-columns:1fr;}
+nav .links{display:none;}
+.hero,.section,.punchline{padding:80px 20px;}
+nav{padding:16px 20px;}
+}
 </style>
 </head>
 <body>
-<canvas id="bg-canvas"></canvas>
 <div class="content">
-  <nav>
-    <div class="logo"><div class="mark"></div>cairn</div>
-    <div class="links">
-      <a href="#features">features</a>
-      <a href="#compare">vs vector db</a>
-      <a href="https://github.com/valtors/cairn">github</a>
-      <a href="https://github.com/valtors/cairn" class="cta">star on github</a>
-    </div>
-  </nav>
+<nav>
+<div class="logo"><div class="mark"></div>cairn</div>
+<div class="links">
+<a href="#features">features</a>
+<a href="#compare">vs vector db</a>
+<a href="https://github.com/valtors/cairn">docs</a>
+<a href="https://github.com/valtors/cairn" class="cta">github</a>
+</div>
+</nav>
 
-  <div class="hero">
-    <div class="chip"><span class="pulse"></span> agent wayfinding, not just memory</div>
-    <h1>your agent forgot <span class="accent">everything</span></h1>
-    <p>every conversation starts from zero. cairn gives agents persistent, structured, bi-temporal memory. one sqlite file. no server. zero llm calls.</p>
-    <div class="hero-actions">
-      <a href="https://github.com/valtors/cairn" class="btn-primary">start building</a>
-      <div class="btn-code"><span>$</span> cargo install cairn</div>
-    </div>
-  </div>
+<div class="hero">
+<div class="eyebrow"><span class="dot"></span> agent wayfinding</div>
+<h1>your agent forgot <span class="accent">everything</span></h1>
+<p class="sub">persistent, structured, bi-temporal memory for ai agents. one sqlite file. zero llm calls. no server.</p>
+<div class="hero-actions">
+<a href="https://github.com/valtors/cairn" class="btn btn-primary">start building</a>
+<div class="btn-code"><span>$</span> cargo install cairn</div>
+</div>
+<div class="terminal">
+<div class="terminal-bar">
+<div class="dots"><span></span><span></span><span></span></div>
+<div class="title">cairn --quickstart</div>
+</div>
+<div class="terminal-body" id="terminal-text">
+</div>
+</div>
+</div>
 
-  <div class="logos">
-    <p>built for agents that need to remember</p>
-    <div class="row">
-      <span>claude</span>
-      <span>cursor</span>
-      <span>codex</span>
-      <span>opencode</span>
-      <span>any mcp client</span>
-    </div>
-  </div>
+<div class="logos">
+<p>built for agents that need to remember</p>
+<div class="row"><span>claude</span><span>cursor</span><span>codex</span><span>opencode</span><span>any mcp client</span></div>
+</div>
 
-  <div class="section" id="features">
-    <div class="section-label"><span class="num">01</span> features</div>
-    <h2>six primitives. <span class="accent">one file.</span></h2>
-    <p>focused tools for storing, recalling, and forgetting what agents learn. no cloud, no server, no llm dependency.</p>
-    <div class="features">
-      <div class="feature">
-        <div class="icon">+</div>
-        <h3>bi-temporal storage</h3>
-        <p>every fact has valid-from and transaction time. track what was true when, not just what's true now.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">~</div>
-        <h3>decay-based forgetting</h3>
-        <p>stale facts fade automatically. confidence decays over time. agents forget what no longer matters.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">*</div>
-        <h3>zero-llm extraction</h3>
-        <p>keyword extraction and regex patterns. no api calls, no tokens spent. facts are parsed, not generated.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">@</div>
-        <h3>graph traversal query</h3>
-        <p>follow edges between facts. find related context by walking the memory graph, not just keyword matching.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">=</div>
-        <h3>vector clocks</h3>
-        <p>conflict detection across sessions. concurrent writes are tracked, not silently overwritten.</p>
-      </div>
-      <div class="feature">
-        <div class="icon">^</div>
-        <h3>one sqlite file</h3>
-        <p>the entire memory layer is one sqlite database. copy it, back it up, inspect it with any sqlite tool.</p>
-      </div>
-    </div>
-  </div>
+<div class="section" id="features">
+<div class="section-label"><span class="num">01</span> features</div>
+<h2>six primitives. <span class="accent">one file.</span></h2>
+<p class="desc">focused tools for storing, recalling, and forgetting what agents learn. no cloud, no server, no llm dependency.</p>
+<div class="features">
+<div class="feature"><div class="num">01</div><div class="body"><h3>bi-temporal storage</h3><p>every fact has valid-from and transaction time. track what was true when, not just what's true now.</p></div></div>
+<div class="feature"><div class="num">02</div><div class="body"><h3>decay-based forgetting</h3><p>stale facts fade automatically. confidence decays over time. agents forget what no longer matters.</p></div></div>
+<div class="feature"><div class="num">03</div><div class="body"><h3>zero-llm extraction</h3><p>keyword extraction and regex patterns. no api calls, no tokens spent. facts are parsed, not generated.</p></div></div>
+<div class="feature"><div class="num">04</div><div class="body"><h3>graph traversal query</h3><p>follow edges between facts. find related context by walking the memory graph, not just keyword matching.</p></div></div>
+<div class="feature"><div class="num">05</div><div class="body"><h3>vector clocks</h3><p>conflict detection across sessions. concurrent writes are tracked, not silently overwritten.</p></div></div>
+<div class="feature"><div class="num">06</div><div class="body"><h3>one sqlite file</h3><p>the entire memory layer is one sqlite database. copy it, back it up, inspect it with any sqlite tool.</p></div></div>
+</div>
+</div>
 
-  <div class="section" id="compare">
-    <div class="section-label"><span class="num">02</span> vs legacy</div>
-    <h2>a vector db stores chunks. <span class="accent">cairn stores facts.</span></h2>
-    <p>vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire.</p>
-    <div class="compare">
-      <div class="col-legacy">
-        <h3>vector db</h3>
-        <p>stores chunks. returns chunks. each session starts from zero.</p>
-        <ul>
-          <li>requires a running server</li>
-          <li>cosine similarity is the only tool</li>
-          <li>no concept of time or staleness</li>
-          <li>chunks can't contradict or evolve</li>
-          <li>costs scale with embedding calls</li>
-        </ul>
-      </div>
-      <div class="col-ours">
-        <h3>cairn</h3>
-        <p>facts that evolve. knowledge that merges, contradicts, and gets forgotten across sessions.</p>
-        <ul>
-          <li>one sqlite file, no server needed</li>
-          <li>graph traversal + keyword search</li>
-          <li>bi-temporal: tracks when facts were true</li>
-          <li>conflict detection via vector clocks</li>
-          <li>zero llm calls for extraction</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="code-block">
-      <span class="lang">bash</span>
-<span class="comment"># install</span>
+<div class="section" id="compare">
+<div class="section-label"><span class="num">02</span> vs legacy</div>
+<h2>a vector db stores chunks. <span class="accent">cairn stores facts.</span></h2>
+<p class="desc">vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire.</p>
+<div class="compare">
+<div class="col-legacy">
+<h3>vector db</h3>
+<p>stores chunks. returns chunks. each session starts from zero.</p>
+<ul><li>requires a running server</li><li>cosine similarity is the only tool</li><li>no concept of time or staleness</li><li>chunks can't contradict or evolve</li><li>costs scale with embedding calls</li></ul>
+</div>
+<div class="col-ours">
+<h3>cairn</h3>
+<p>facts that evolve. knowledge that merges, contradicts, and gets forgotten across sessions.</p>
+<ul><li>one sqlite file, no server needed</li><li>graph traversal + keyword search</li><li>bi-temporal: tracks when facts were true</li><li>conflict detection via vector clocks</li><li>zero llm calls for extraction</li></ul>
+</div>
+</div>
+<div class="code-show">
+<div class="bar"><div class="dots"><span></span><span></span><span></span></div><div class="title">bash</div></div>
+<div class="body"><span class="comment"># install</span>
 <span class="cmd">cargo install cairn</span>
 
 <span class="comment"># store a fact</span>
@@ -221,248 +199,125 @@
 
 <span class="comment"># recall with temporal awareness</span>
 <span class="cmd">cairn recall</span> <span class="str">"what os does tamish use"</span>
-<span class="kw">-></span> macos (closed 2024-03-15) | linux (active)
+<span class="out">-> macos (closed 2024-03-15) | linux (active)</span>
 
 <span class="comment"># see what's stale</span>
-<span class="cmd">cairn forget</span> --dry-run
+<span class="cmd">cairn forget</span> <span class="kw">--dry-run</span>
 
-<span class="comment"># import into any mcp client</span>
-<span class="cmd">cairn mcp</span> <span class="str">--stdio</span>
-    </div>
-  </div>
-
-  <div class="punchline">
-    <h2>agents leave cairns to mark <span class="accent">what they learned</span></h2>
-    <div class="actions">
-      <a href="https://github.com/valtors/cairn" class="btn-primary">star on github</a>
-      <div class="btn-code"><span>$</span> cargo install cairn</div>
-    </div>
-  </div>
-
-  <footer>
-    <p>mit license. rust. one file. no dependencies on you.</p>
-  </footer>
+<span class="comment"># expose as mcp server</span>
+<span class="cmd">cairn mcp</span> <span class="str">--stdio</span></div>
 </div>
-<script>
-var cScene, cRenderer, cCamera, cPoints, cMat, cLines, cClock;
-var cMouse = {x:0, y:0}, cTarget = {x:0, y:0}, cScrollY = 0;
+</div>
 
-function initCairn() {
-  if (typeof THREE === 'undefined') return;
-  var canvas = document.getElementById('bg-canvas');
-  if (!canvas) return;
+<div class="punchline">
+<h2>agents leave cairns to mark <span class="accent">what they learned</span></h2>
+<div class="actions">
+<a href="https://github.com/valtors/cairn" class="btn btn-primary">star on github</a>
+<div class="btn-code"><span>$</span> cargo install cairn</div>
+</div>
+</div>
 
-  cScene = new THREE.Scene();
-  cCamera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);
-  cCamera.position.z = 50;
-
-  cRenderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true});
-  cRenderer.setSize(window.innerWidth, window.innerHeight);
-  cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  var COUNT = 100;
-  var positions = new Float32Array(COUNT * 3);
-  var colors = new Float32Array(COUNT * 3);
-  var sizes = new Float32Array(COUNT);
-  var phases = new Float32Array(COUNT);
-
-  var cStone = new THREE.Color('#8a6d3b');
-  var cGreen = new THREE.Color('#2d5a3e');
-  var cDark = new THREE.Color('#3a3530');
-
-  for (var i = 0; i < COUNT; i++) {
-    positions[i*3] = (Math.random() - 0.5) * 120;
-    positions[i*3+1] = (Math.random() - 0.5) * 80;
-    positions[i*3+2] = (Math.random() - 0.5) * 40;
-    var r = Math.random();
-    var c = r > 0.6 ? cStone : (r > 0.3 ? cDark : cGreen);
-    colors[i*3] = c.r;
-    colors[i*3+1] = c.g;
-    colors[i*3+2] = c.b;
-    sizes[i] = Math.random() * 2.5 + 1;
-    phases[i] = Math.random() * Math.PI * 2;
-  }
-
-  var geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-  geo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
-
-  cMat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: {value:0},
-      uMouse: {value: new THREE.Vector2(0, 0)},
-      uPixelRatio: {value: Math.min(window.devicePixelRatio, 2)}
-    },
-    vertexShader: [
-      'attribute float size;',
-      'attribute float phase;',
-      'uniform float uTime;',
-      'uniform vec2 uMouse;',
-      'uniform float uPixelRatio;',
-      'varying vec3 vColor;',
-      'varying float vAlpha;',
-      'void main() {',
-      '  vColor = color;',
-      '  vec3 pos = position;',
-      '  pos.y += sin(uTime * 0.3 + phase) * 1.5;',
-      '  pos.x += cos(uTime * 0.2 + phase) * 1.0;',
-      '  vec2 toMouse = uMouse - pos.xy;',
-      '  float md = length(toMouse);',
-      '  float pull = smoothstep(30.0, 0.0, md) * 4.0;',
-      '  pos.xy -= normalize(toMouse + 0.001) * pull;',
-      '  vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);',
-      '  gl_Position = projectionMatrix * mvPos;',
-      '  float pulse = (sin(uTime * 0.8 + phase) + 1.0) * 0.5;',
-      '  gl_PointSize = size * (1.5 + pulse * 0.5 + pull * 0.6) * uPixelRatio * (35.0 / -mvPos.z);',
-      '  vAlpha = 0.5 + pulse * 0.2 + pull * 0.25;',
-      '}'
-    ].join('\n'),
-    fragmentShader: [
-      'varying vec3 vColor;',
-      'varying float vAlpha;',
-      'void main() {',
-      '  vec2 uv = gl_PointCoord - 0.5;',
-      '  float d = length(uv);',
-      '  if (d > 0.5) discard;',
-      '  float glow = 1.0 - smoothstep(0.0, 0.5, d);',
-      '  glow = pow(glow, 1.5);',
-      '  gl_FragColor = vec4(vColor, glow * vAlpha);',
-      '}'
-    ].join('\n'),
-    transparent: true,
-    blending: THREE.NormalBlending,
-    depthWrite: false,
-    vertexColors: true
-  });
-
-  cPoints = new THREE.Points(geo, cMat);
-  cScene.add(cPoints);
-
-  var linePositions = [];
-  var lineAlphas = [];
-  for (var a = 0; a < COUNT; a++) {
-    for (var b = a + 1; b < COUNT; b++) {
-      var dx = positions[a*3] - positions[b*3];
-      var dy = positions[a*3+1] - positions[b*3+1];
-      var dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 15) {
-        linePositions.push(positions[a*3], positions[a*3+1], positions[a*3+2]);
-        linePositions.push(positions[b*3], positions[b*3+1], positions[b*3+2]);
-        lineAlphas.push(1.0 - dist / 15);
-        lineAlphas.push(1.0 - dist / 15);
-      }
-    }
-  }
-  var lineGeo = new THREE.BufferGeometry();
-  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-  lineGeo.setAttribute('alpha', new THREE.Float32BufferAttribute(lineAlphas, 1));
-  var lineMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: {value:0} },
-    vertexShader: [
-      'attribute float alpha;',
-      'varying float vAlpha;',
-      'void main() {',
-      '  vAlpha = alpha;',
-      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-      '}'
-    ].join('\n'),
-    fragmentShader: [
-      'varying float vAlpha;',
-      'void main() {',
-      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.6);',
-      '}'
-    ].join('\n'),
-    transparent: true,
-    blending: THREE.NormalBlending,
-    depthWrite: false
-  });
-  cLines = new THREE.LineSegments(lineGeo, lineMat);
-  cScene.add(cLines);
-
-  cClock = new THREE.Clock();
-
-  window.addEventListener('mousemove', function(e) {
-    cTarget.x = (e.clientX / window.innerWidth - 0.5) * 120;
-    cTarget.y = -(e.clientY / window.innerHeight - 0.5) * 80;
-  });
-  window.addEventListener('mouseleave', function() { cTarget.x = 0; cTarget.y = 0; });
-  window.addEventListener('scroll', function() { cScrollY = window.scrollY; });
-  window.addEventListener('resize', function() {
-    cCamera.aspect = window.innerWidth / window.innerHeight;
-    cCamera.updateProjectionMatrix();
-    cRenderer.setSize(window.innerWidth, window.innerHeight);
-    cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    cMat.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
-  });
-
-  animateCairn();
-}
-
-function animateCairn() {
-  requestAnimationFrame(animateCairn);
-  if (!cMat || !cRenderer) return;
-  var t = cClock.getElapsedTime();
-  cMat.uniforms.uTime.value = t;
-  cMouse.x += (cTarget.x - cMouse.x) * 0.05;
-  cMouse.y += (cTarget.y - cMouse.y) * 0.05;
-  cMat.uniforms.uMouse.value.x = cMouse.x;
-  cMat.uniforms.uMouse.value.y = cMouse.y;
-  cCamera.position.y = -cScrollY * 0.012;
-  cCamera.position.x = cMouse.x * 0.03;
-  cCamera.lookAt(0, cCamera.position.y, 50);
-  cPoints.rotation.y = t * 0.02;
-  cLines.rotation.y = t * 0.02;
-  cRenderer.render(cScene, cCamera);
-}
-
-initCairn();
-</script>
+<footer>
+<p>mit license. rust. one file. no dependencies on you.</p>
+</footer>
+</div>
 <script>
 gsap.registerPlugin(ScrollTrigger);
 
+var lines = [
+{t:'prompt',text:'$ '},
+{t:'cmd',text:'cargo install cairn'},
+{t:'out',text:'  installing cairn v0.1.0'},
+{t:'out',text:'  done. 1.2mb. zero dependencies.'},
+{t:'br',text:''},
+{t:'prompt',text:'$ '},
+{t:'cmd',text:'cairn remember "user prefers dark mode"'},
+{t:'out',text:'  stored. fact #1. confidence: 1.0'},
+{t:'br',text:''},
+{t:'prompt',text:'$ '},
+{t:'cmd',text:'cairn recall "what os does tamish use"'},
+{t:'out',text:'  -> macos (closed 2024-03-15)'},
+{t:'out',text:'  -> linux (active, confidence: 0.92)'},
+{t:'br',text:''},
+{t:'prompt',text:'$ '},
+{t:'cmd',text:'cairn mcp --stdio'},
+{t:'accent',text:'  mcp server listening on stdio'},
+{t:'cursor',text:' '}
+];
+
+function typeTerminal() {
+var container = document.getElementById('terminal-text');
+if (!container) return;
+var idx = 0, charIdx = 0;
+var currentSpan = null;
+
+function nextLine() {
+if (idx >= lines.length) return;
+var line = lines[idx];
+if (line.t === 'br') {
+container.appendChild(document.createElement('br'));
+idx++;
+setTimeout(nextLine, 100);
+return;
+}
+if (line.t === 'cursor') {
+var c = document.createElement('span');
+c.className = 'cursor';
+container.appendChild(c);
+return;
+}
+var span = document.createElement('span');
+span.className = line.t === 'prompt' ? 'prompt' : (line.t === 'cmd' ? 'cmd' : (line.t === 'out' ? 'out' : (line.t === 'accent' ? 'accent' : 'green')));
+if (line.t === 'prompt') {
+span.textContent = line.text;
+container.appendChild(span);
+idx++;
+charIdx = 0;
+setTimeout(nextLine, 200);
+return;
+}
+currentSpan = span;
+container.appendChild(span);
+charIdx = 0;
+typeChar();
+}
+
+function typeChar() {
+if (!currentSpan) return;
+var line = lines[idx];
+if (charIdx >= line.text.length) {
+idx++;
+currentSpan = null;
+container.appendChild(document.createElement('br'));
+setTimeout(nextLine, line.t === 'cmd' ? 600 : 150);
+return;
+}
+currentSpan.textContent += line.text[charIdx];
+charIdx++;
+setTimeout(typeChar, 25 + Math.random() * 30);
+}
+
+nextLine();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  gsap.from('.chip', {y: 20, opacity: 0, duration: 0.6, ease: 'power2.out'});
-  gsap.from('.hero h1', {y: 30, opacity: 0, duration: 1, delay: 0.1, ease: 'power3.out'});
-  gsap.from('.hero p', {y: 20, opacity: 0, duration: 0.8, delay: 0.3, ease: 'power3.out'});
-  gsap.from('.hero-actions', {y: 20, opacity: 0, duration: 0.6, delay: 0.5, ease: 'power3.out'});
-  gsap.from('.logos', {opacity: 0, duration: 0.8, delay: 0.6, ease: 'power2.out'});
+gsap.from('.eyebrow', {y:20, opacity:0, duration:0.6, ease:'power2.out'});
+gsap.from('.hero h1', {y:30, opacity:0, duration:1, delay:0.1, ease:'power3.out'});
+gsap.from('.hero .sub', {y:20, opacity:0, duration:0.8, delay:0.3, ease:'power3.out'});
+gsap.from('.hero-actions', {y:20, opacity:0, duration:0.6, delay:0.5, ease:'power3.out'});
+gsap.from('.terminal', {y:40, opacity:0, duration:0.8, delay:0.7, ease:'power3.out'});
+gsap.from('.logos', {opacity:0, duration:0.8, delay:0.8, ease:'power2.out'});
+gsap.delayedCall(1.5, typeTerminal);
 
-  gsap.utils.toArray('.feature').forEach(function(f, i) {
-    gsap.from(f, {
-      opacity: 0, y: 30, duration: 0.5, ease: 'power2.out',
-      scrollTrigger: { trigger: f, start: 'top 88%' }
-    });
-  });
-
-  gsap.from('.compare .col-legacy', {
-    opacity: 0, x: -30, duration: 0.6, ease: 'power2.out',
-    scrollTrigger: { trigger: '.compare', start: 'top 80%' }
-  });
-  gsap.from('.compare .col-ours', {
-    opacity: 0, x: 30, duration: 0.6, delay: 0.1, ease: 'power2.out',
-    scrollTrigger: { trigger: '.compare', start: 'top 80%' }
-  });
-
-  gsap.from('.code-block', {
-    opacity: 0, y: 30, duration: 0.8, ease: 'power2.out',
-    scrollTrigger: { trigger: '.code-block', start: 'top 85%' }
-  });
-
-  gsap.from('.punchline h2', {
-    opacity: 0, y: 40, duration: 0.8, ease: 'power3.out',
-    scrollTrigger: { trigger: '.punchline', start: 'top 75%' }
-  });
-  gsap.from('.punchline .actions', {
-    opacity: 0, y: 20, duration: 0.6, delay: 0.2, ease: 'power2.out',
-    scrollTrigger: { trigger: '.punchline', start: 'top 75%' }
-  });
-
-  gsap.from('footer', {
-    opacity: 0, duration: 0.6,
-    scrollTrigger: { trigger: 'footer', start: 'top 95%' }
-  });
+gsap.utils.toArray('.feature').forEach(function(f) {
+gsap.from(f, {opacity:0, y:30, duration:0.5, ease:'power2.out', scrollTrigger:{trigger:f, start:'top 88%'}});
+});
+gsap.from('.compare .col-legacy', {opacity:0, x:-30, duration:0.6, scrollTrigger:{trigger:'.compare', start:'top 80%'}});
+gsap.from('.compare .col-ours', {opacity:0, x:30, duration:0.6, delay:0.1, scrollTrigger:{trigger:'.compare', start:'top 80%'}});
+gsap.from('.code-show', {opacity:0, y:30, duration:0.8, scrollTrigger:{trigger:'.code-show', start:'top 85%'}});
+gsap.from('.punchline h2', {opacity:0, y:40, duration:0.8, scrollTrigger:{trigger:'.punchline', start:'top 75%'}});
+gsap.from('.punchline .actions', {opacity:0, y:20, duration:0.6, delay:0.2, scrollTrigger:{trigger:'.punchline', start:'top 75%'}});
+gsap.from('footer', {opacity:0, duration:0.6, scrollTrigger:{trigger:'footer', start:'top 95%'}});
 });
 </script>
 </body>
