@@ -147,7 +147,7 @@ function initCairn() {
       '  gl_Position = projectionMatrix * mvPos;',
       '  float pulse = (sin(uTime * 0.8 + phase) + 1.0) * 0.5;',
       '  gl_PointSize = size * (1.5 + pulse * 0.6 + pull * 0.8) * uPixelRatio * (35.0 / -mvPos.z);',
-      '  vAlpha = 0.6 + pulse * 0.25 + pull * 0.35;',
+      '  vAlpha = 0.8 + pulse * 0.2 + pull * 0.2;',
       '}'
     ].join('\n'),
     fragmentShader: [
@@ -202,7 +202,7 @@ function initCairn() {
     fragmentShader: [
       'varying float vAlpha;',
       'void main() {',
-      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.25);',
+      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.5);',
       '}'
     ].join('\n'),
     transparent: true,
