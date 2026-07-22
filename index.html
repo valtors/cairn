@@ -336,15 +336,18 @@
 </div>
 
 <script>
+console.log('THREE_SCRIPT_START', typeof THREE);
 (function() {
 if (typeof THREE === 'undefined') { console.error('THREE not loaded'); return; }
 const canvas = document.getElementById('bg-canvas');
+console.log('CANVAS_FOUND', !!canvas);
 if (!canvas) return;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 60;
 
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+console.log('RENDERER_CREATED', renderer.info);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -453,6 +456,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+console.log('ANIMATE_CALLED', renderer.info.render.calls);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
