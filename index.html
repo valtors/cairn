@@ -336,8 +336,9 @@
 </div>
 
 <script>
-(function() {
+window.addEventListener('load', function() {
 const canvas = document.getElementById('bg-canvas');
+if (!canvas || typeof THREE === 'undefined') return;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 60;
@@ -459,7 +460,7 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   mat.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
 });
-})();
+});
 </script>
 
 <script>
