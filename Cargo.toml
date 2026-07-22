@@ -1,0 +1,43 @@
+[package]
+name = "recall"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "local-first memory for AI agents. temporal knowledge store in one sqlite file."
+
+[[bin]]
+name = "recall"
+path = "bin/recall/main.rs"
+
+[dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive", "env"] }
+recall-store = { path = "crates/store" }
+recall-mcp = { path = "crates/mcp" }
+recall-query = { path = "crates/query" }
+recall-traverse = { path = "crates/traverse" }
+recall-forget = { path = "crates/forget" }
+recall-extract = { path = "crates/extract" }
+recall-sync = { path = "crates/sync" }
+
+[workspace]
+members = [
+    "crates/store",
+    "crates/traverse",
+    "crates/forget",
+    "crates/query",
+    "crates/extract",
+    "crates/sync",
+    "crates/mcp",
+]
+
+[workspace.dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }

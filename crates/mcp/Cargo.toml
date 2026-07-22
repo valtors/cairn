@@ -1,0 +1,12 @@
+[package]
+name = "recall-mcp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+recall-store = { path = "../store" }
+recall-query = { path = "../query" }
+recall-forget = { path = "../forget" }
+recall-extract = { path = "../extract" }
+serde = { workspace = true }
+serde_json = { workspace = true }

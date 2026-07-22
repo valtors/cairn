@@ -1,0 +1,8 @@
+[package]
+name = "recall-forget"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+recall-store = { path = "../store" }
+chrono = { workspace = true }

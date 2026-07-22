@@ -1,0 +1,9 @@
+[package]
+name = "recall-sync"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+recall-store = { path = "../store" }
+serde = { workspace = true }
+serde_json = { workspace = true }
