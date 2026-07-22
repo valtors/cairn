@@ -1,20 +1,22 @@
-# recall
+# cairn
 
-local-first memory for AI agents. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
+agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
 
 ## what
 
-recall gives any AI agent persistent memory. the agent remembers facts about you, your projects, your preferences. it forgets what doesn't matter. it tracks how things change over time. all of it lives in one sqlite file on your machine.
+cairn is a new category. not "memory" or "knowledge graph." agent wayfinding - agents that can find their way back to what they know.
 
-MCP gave agents tools. recall gives them memory.
+a cairn is a pile of stones hikers stack to mark a path. agents leave cairns to mark what they learned and where they've been. each fact is a stone. the pile is the path.
+
+MCP gave agents tools. cairn gives them a path.
 
 ## why
 
-every agent memory system today is either a walled garden (mem0, zep cloud) or a heavy dependency (neo4j, postgres). none of them talk to each other. your memory is locked into whichever platform you picked first. recall is the opposite: one binary, one file, zero dependencies, works with any agent that speaks MCP.
+every agent memory system today is either a walled garden (mem0, zep cloud) or a heavy dependency (neo4j, postgres). none of them talk to each other. your memory is locked into whichever platform you picked first. cairn is the opposite: one binary, one file, zero dependencies, works with any agent that speaks MCP.
 
 ## how it works
 
-recall stores facts as temporal triples: subject, predicate, object, with validity windows.
+cairn stores facts as temporal triples: subject, predicate, object, with validity windows.
 
 ```
 tamish --uses_os--> macos    (valid: 2024-01-01 to 2025-07-15)
@@ -23,7 +25,7 @@ tamish --uses_os--> linux     (valid: 2025-07-15 to now)
 
 when a new fact contradicts an old one, the old fact is closed (not deleted). you can query the past: "what did we know about tamish in march?"
 
-### five things recall does that nobody else does together
+### five things cairn does that nobody else does together
 
 1. **bi-temporal tracking without a graph database.** every fact carries two timestamps: when it was true in the world, and when the system learned it. contradicted facts get closed, not deleted. all in sqlite.
 
@@ -38,17 +40,17 @@ when a new fact contradicts an old one, the old fact is closed (not deleted). yo
 ## architecture
 
 ```
-recall/
+cairn/
   crates/
     store/        temporal sqlite engine, validity windows, conflict resolution
-    traverse/     recursive CTE graph traversal, depth-limited
+    traverse/     graph traversal, depth-limited
     forget/       decay scoring, garbage collection, tombstones
     query/        semantic entry points + traversal + ranking
     extract/      pattern-based fact extraction (no LLM)
     sync/         vector clocks, peer sync, conflict resolution
     mcp/          MCP server exposing remember/recall/forget/export
   bin/
-    recall/       CLI + MCP server entry point
+    cairn/        CLI + MCP server entry point
 ```
 
 one sqlite file. one binary. zero external services.
@@ -57,17 +59,17 @@ one sqlite file. one binary. zero external services.
 
 ```bash
 # install
-cargo install recall
+cargo install cairn
 
 # run as MCP server (any MCP-compatible agent connects)
-recall serve
+cairn serve
 
 # or use directly
-recall remember "tamish" "uses_os" "linux"
-recall recall "what os does tamish use"
-recall forget --subject tamish --predicate uses_os --older-than 30d
-recall export > my-memory.mem
-recall import < my-memory.mem
+cairn remember --subject tamish --predicate uses_os --object linux
+cairn recall "what os does tamish use"
+cairn forget --older-than 30d
+cairn export > my-memory.json
+cairn import < my-memory.json
 ```
 
 ## license

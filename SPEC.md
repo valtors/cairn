@@ -1,4 +1,4 @@
-# recall spec v0.1
+# cairn spec v0.1
 
 ## core data model
 
@@ -49,7 +49,7 @@ options:
 - `source`: defaults to "user"
 - `device_id`: defaults to local device id
 
-### recall(query, options?)
+### cairn(query, options?)
 
 returns a ranked subgraph of relevant facts.
 
@@ -136,7 +136,7 @@ recall exposes these as MCP tools. any MCP-compatible agent gets memory for free
 
 ## file format
 
-one sqlite database file. default location: `~/.recall/memory.db`
+one sqlite database file. default location: `~/.cairn/memory.db`
 
 no config files. no external services. no network calls. the file IS the product.
 

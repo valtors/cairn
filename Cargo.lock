@@ -101,6 +101,91 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
+name = "cairn"
+version = "0.1.0"
+dependencies = [
+ "cairn-extract",
+ "cairn-forget",
+ "cairn-mcp",
+ "cairn-query",
+ "cairn-store",
+ "cairn-sync",
+ "cairn-traverse",
+ "chrono",
+ "clap",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "cairn-extract"
+version = "0.1.0"
+dependencies = [
+ "regex",
+]
+
+[[package]]
+name = "cairn-forget"
+version = "0.1.0"
+dependencies = [
+ "cairn-store",
+ "chrono",
+]
+
+[[package]]
+name = "cairn-mcp"
+version = "0.1.0"
+dependencies = [
+ "cairn-extract",
+ "cairn-forget",
+ "cairn-query",
+ "cairn-store",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "cairn-query"
+version = "0.1.0"
+dependencies = [
+ "cairn-store",
+ "cairn-traverse",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "cairn-store"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hostname",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "cairn-sync"
+version = "0.1.0"
+dependencies = [
+ "cairn-store",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "cairn-traverse"
+version = "0.1.0"
+dependencies = [
+ "cairn-store",
+ "rusqlite",
+]
+
+[[package]]
 name = "cc"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -402,91 +487,6 @@ name = "r-efi"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
-
-[[package]]
-name = "recall"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "recall-extract",
- "recall-forget",
- "recall-mcp",
- "recall-query",
- "recall-store",
- "recall-sync",
- "recall-traverse",
- "rusqlite",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "recall-extract"
-version = "0.1.0"
-dependencies = [
- "regex",
-]
-
-[[package]]
-name = "recall-forget"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "recall-store",
-]
-
-[[package]]
-name = "recall-mcp"
-version = "0.1.0"
-dependencies = [
- "recall-extract",
- "recall-forget",
- "recall-query",
- "recall-store",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "recall-query"
-version = "0.1.0"
-dependencies = [
- "recall-store",
- "recall-traverse",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "recall-store"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "hostname",
- "rusqlite",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "recall-sync"
-version = "0.1.0"
-dependencies = [
- "recall-store",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "recall-traverse"
-version = "0.1.0"
-dependencies = [
- "recall-store",
- "rusqlite",
-]
 
 [[package]]
 name = "regex"

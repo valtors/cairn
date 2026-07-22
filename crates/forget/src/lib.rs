@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use recall_store::{Fact, Store};
+use cairn_store::{Fact, Store};
 
 pub struct ForgetOptions {
     pub older_than_days: Option<i64>,

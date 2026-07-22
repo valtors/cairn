@@ -1,8 +1,8 @@
 [package]
-name = "recall-forget"
+name = "cairn-forget"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-recall-store = { path = "../store" }
+cairn-store = { path = "../store" }
 chrono = { workspace = true }

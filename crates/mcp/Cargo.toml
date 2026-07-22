@@ -1,12 +1,12 @@
 [package]
-name = "recall-mcp"
+name = "cairn-mcp"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-recall-store = { path = "../store" }
-recall-query = { path = "../query" }
-recall-forget = { path = "../forget" }
-recall-extract = { path = "../extract" }
+cairn-store = { path = "../store" }
+cairn-query = { path = "../query" }
+cairn-forget = { path = "../forget" }
+cairn-extract = { path = "../extract" }
 serde = { workspace = true }
 serde_json = { workspace = true }

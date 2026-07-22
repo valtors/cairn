@@ -1,4 +1,4 @@
-use recall_store::Fact;
+use cairn_store::Fact;
 use rusqlite::{params, Connection};
 use std::collections::{HashMap, HashSet};
 

@@ -1,10 +1,10 @@
 [package]
-name = "recall-query"
+name = "cairn-query"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-recall-store = { path = "../store" }
-recall-traverse = { path = "../traverse" }
+cairn-store = { path = "../store" }
+cairn-traverse = { path = "../traverse" }
 serde = { workspace = true }
 serde_json = { workspace = true }

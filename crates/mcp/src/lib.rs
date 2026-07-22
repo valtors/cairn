@@ -1,7 +1,7 @@
-use recall_extract::extract_from_text;
-use recall_forget::{run as run_forget, ForgetOptions};
-use recall_query::{query, QueryOptions};
-use recall_store::{RememberOptions, Store};
+use cairn_extract::extract_from_text;
+use cairn_forget::{run as run_forget, ForgetOptions};
+use cairn_query::{query, QueryOptions};
+use cairn_store::{RememberOptions, Store};
 use serde_json::{json, Value};
 
 pub fn handle_remember(store: &Store, args: &Value) -> Result<Value, String> {
@@ -74,7 +74,7 @@ pub fn handle_import(store: &Store, args: &Value) -> Result<Value, String> {
     let fact_arr = facts.as_array().ok_or("facts must be an array")?;
     let mut imported = 0;
     for fact_val in fact_arr {
-        let fact: recall_store::Fact = serde_json::from_value(fact_val.clone()).map_err(|e| e.to_string())?;
+        let fact: cairn_store::Fact = serde_json::from_value(fact_val.clone()).map_err(|e| e.to_string())?;
         store.import_fact(&fact)?;
         imported += 1;
     }
@@ -121,7 +121,7 @@ pub fn list_tools() -> Vec<Value> {
             }
         }),
         json!({
-            "name": "recall",
+            "name": "cairn",
             "description": "Query memory. Returns relevant facts by semantic similarity and graph traversal.",
             "inputSchema": {
                 "type": "object",
@@ -181,7 +181,7 @@ pub fn list_tools() -> Vec<Value> {
 pub fn dispatch(store: &Store, tool: &str, args: &Value) -> Result<Value, String> {
     match tool {
         "remember" => handle_remember(store, args),
-        "recall" => handle_recall(store, args),
+        "cairn" => handle_recall(store, args),
         "forget" => handle_forget(store, args),
         "export_memory" => handle_export(store),
         "import_memory" => handle_import(store, args),

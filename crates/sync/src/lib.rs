@@ -1,4 +1,4 @@
-use recall_store::{Fact, Store};
+use cairn_store::{Fact, Store};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
