@@ -7,18 +7,18 @@
 <meta name="description" content="agent wayfinding. temporal knowledge store in one sqlite file.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
   body {
     background: #fdfcf9;
-    color: #16130f;
+    color: #1a1a1a;
     font-family: "Inter", -apple-system, system-ui, sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* particle canvas */
   #particles {
     position: fixed;
     inset: 0;
@@ -26,16 +26,14 @@
     pointer-events: none;
   }
 
-  /* content */
   .content {
     position: relative;
     z-index: 1;
-    max-width: 620px;
+    max-width: 640px;
     margin: 0 auto;
-    padding: 100px 24px 120px;
+    padding: 120px 24px 140px;
   }
 
-  /* nav */
   .nav {
     position: fixed;
     top: 28px;
@@ -61,23 +59,24 @@
     font-weight: 700;
     font-size: 13px;
     letter-spacing: -0.3px;
-    color: #16130f;
+    color: #1a1a1a;
   }
 
-  /* hero */
   .hook {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 22px;
-    font-weight: 400;
-    color: rgba(22,19,15,0.5);
-    margin-bottom: 60px;
-    line-height: 1.4;
+    font-family: "Inter", sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    line-height: 1.3;
     opacity: 0;
     animation: fadeIn 0.8s ease 0.2s forwards;
   }
-  .hook .cursor {
+  .hook .accent {
     color: #8a6d3b;
-    font-weight: 700;
+  }
+  .hook .cursor {
     border-right: 2px solid #8a6d3b;
     animation: blink 1s step-end infinite;
   }
@@ -85,71 +84,98 @@
     0%,50% { border-color: #8a6d3b; }
     51%,100% { border-color: transparent; }
   }
+  .sub {
+    font-family: "Inter", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #888;
+    margin-bottom: 64px;
+    line-height: 1.5;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 0.4s forwards;
+  }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* terminal banner */
-  .terminal-banner {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
-    color: rgba(22,19,15,0.7);
-    line-height: 1.5;
-    margin-bottom: 48px;
-    white-space: pre;
-    opacity: 0;
-    animation: fadeIn 0.8s ease 0.5s forwards;
-  }
-  .terminal-banner .dim { color: rgba(22,19,15,0.4); }
-
-  /* story */
-  .story {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 15px;
-    line-height: 1.7;
-  }
-  .agent-label {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-top: 32px;
-    margin-bottom: 8px;
-  }
-  .agent-label:first-of-type { margin-top: 0; }
-  .agent-label.you { color: #8a6d3b; }
-  .agent-label.agent { color: #4a7a5e; }
-  .line {
-    color: rgba(22,19,15,0.7);
-    margin-bottom: 2px;
-    opacity: 0;
-    transform: translateX(-8px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  .line.visible {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  .line.prompt { color: rgba(22,19,15,0.5); }
-  .line.tool { color: #4a7a5e; }
-  .line.tool .check { color: #7ab583; }
-  .line.reaction { color: rgba(22,19,15,0.8); font-style: italic; }
-
-  /* divider */
   .divider {
-    margin: 48px 0;
+    margin: 56px 0;
     border: none;
-    border-top: 1px solid rgba(138,109,59,0.15);
+    border-top: 1px solid #eee;
     width: 0;
     transition: width 0.8s ease;
   }
   .divider.visible { width: 100%; }
 
-  /* punchline */
+  /* conversation */
+  .turn {
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .turn.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .speaker {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .speaker.you { color: #8a6d3b; }
+  .speaker.you::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: #8a6d3b;
+    border-radius: 50%;
+  }
+  .speaker.agent { color: #4a7a5e; }
+  .speaker.agent::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: #4a7a5e;
+    border-radius: 50%;
+  }
+  .msg {
+    font-family: "Inter", sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.65;
+    color: #333;
+  }
+  .msg p { margin-bottom: 4px; }
+  .msg .react {
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+  .msg .code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    background: #f5f0e8;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #8a6d3b;
+  }
+  .msg .check {
+    color: #7ab583;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    margin-right: 4px;
+  }
+
   .punchline-wrap {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.8s ease, transform 0.8s ease;
+    margin-top: 72px;
   }
   .punchline-wrap.visible {
     opacity: 1;
@@ -157,37 +183,34 @@
   }
   .punchline {
     font-family: "Inter", sans-serif;
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 32px;
+    font-weight: 700;
     letter-spacing: -1px;
     line-height: 1.25;
     margin-bottom: 16px;
-    margin-top: 60px;
   }
   .punchline .accent {
     color: #8a6d3b;
     font-style: italic;
   }
   .punchline-sub {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 14px;
-    color: rgba(22,19,15,0.5);
+    font-family: "Inter", sans-serif;
+    font-size: 17px;
+    color: #888;
     line-height: 1.6;
     margin-bottom: 48px;
   }
 
-  /* link */
   .link-out {
     font-family: "JetBrains Mono", monospace;
-    font-size: 48px;
+    font-size: 36px;
     font-weight: 500;
-    letter-spacing: -2px;
+    letter-spacing: -1.5px;
     color: #8a6d3b;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 4px;
     display: inline-block;
-    margin-top: 40px;
     opacity: 0;
     transform: translateY(16px);
     transition: opacity 0.6s ease, transform 0.6s ease, color 0.2s ease;
@@ -196,26 +219,25 @@
     opacity: 1;
     transform: translateY(0);
   }
-  .link-out:hover { color: #16130f; }
+  .link-out:hover { color: #1a1a1a; }
 
   .footer-note {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    color: rgba(22,19,15,0.3);
-    margin-top: 60px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 56px;
     opacity: 0;
     transition: opacity 0.6s ease 0.3s;
   }
   .footer-note.visible { opacity: 1; }
 
-  /* mobile */
   @media (max-width: 640px) {
-    .content { padding: 80px 20px 100px; }
-    .hook { font-size: 18px; }
-    .story { font-size: 14px; }
-    .terminal-banner { font-size: 11px; }
-    .punchline { font-size: 22px; }
-    .link-out { font-size: 32px; }
+    .content { padding: 100px 20px 120px; }
+    .hook { font-size: 24px; }
+    .sub { font-size: 15px; }
+    .msg { font-size: 16px; }
+    .punchline { font-size: 26px; }
+    .link-out { font-size: 28px; }
   }
 </style>
 </head>
@@ -230,287 +252,283 @@
 
 <div class="content">
 
-  <div class="hook" id="hook">&gt; your agent has <span class="cursor" id="cursor-word">amnesia</span></div>
+  <div class="hook">your agent has <span class="accent">amnesia<span class="cursor">&nbsp;</span></span></div>
+  <div class="sub">every conversation starts from zero. nothing remembered, nothing learned.</div>
 
-  <div class="terminal-banner" id="banner">  ___
- / _ \  ___  _ __  __ _  ___ _ __
-| | | |/ _ \| '_ \/ _` |/ _ \ '__|
-| |_| | (_) | | | \__, \  __/ |
- \__,_|\___/|_| |_|___/\___|_|  v0.1
-
-  one sqlite file. zero cloud.</div>
-
-  <div class="story" id="story-1">
-
-    <div class="agent-label you">you</div>
-    <div class="line">what database did we pick for the auth service?</div>
-
-    <div class="agent-label agent">agent</div>
-    <div class="line">i don't have context from our previous conversations.</div>
-    <div class="line">could you tell me again?</div>
-
-    <div class="line reaction">&gt; so you just... forgot everything?</div>
-
-    <div class="line">yes. every conversation starts from zero.</div>
-    <div class="line">i have no memory of past sessions.</div>
-
-    <div class="line reaction">&gt; that's insane</div>
-
+  <div class="turn">
+    <div class="speaker you">you</div>
+    <div class="msg">
+      <p class="react">what database did we pick for the auth service?</p>
+    </div>
   </div>
 
-  <hr class="divider" id="div-1">
-
-  <div class="story" id="story-2">
-
-    <div class="agent-label you">you</div>
-    <div class="line">install cairn</div>
-
-    <div class="agent-label agent">cairn</div>
-    <div class="line tool"><span class="check">+</span> cairn serve --stdio</div>
-    <div class="line">ready. 6 tools: remember, recall, forget,</div>
-    <div class="line">extract, export, import.</div>
-
-    <div class="agent-label you">you</div>
-    <div class="line">what database did we pick for the auth service?</div>
-
-    <div class="agent-label agent">agent</div>
-    <div class="line tool"><span class="check">+</span> cairn.recall("auth service database")</div>
-    <div class="line">postgres. you decided on july 15th because</div>
-    <div class="line">you needed row-level security. you also</div>
-    <div class="line">considered sqlite but ruled it out for</div>
-    <div class="line">concurrent writes.</div>
-
-    <div class="line reaction">&gt; oh</div>
-
-    <div class="agent-label you">you</div>
-    <div class="line">i switched to neovim btw</div>
-
-    <div class="agent-label agent">agent</div>
-    <div class="line tool"><span class="check">+</span> cairn.remember("tamish", "uses_editor", "neovim")</div>
-    <div class="line">got it. the old "uses vim" fact is closed,</div>
-    <div class="line">not deleted. i'll remember the history.</div>
-
-    <div class="line reaction">&gt; wait it tracks history?</div>
-
-    <div class="line">every fact has a validity window.</div>
-    <div class="line">new facts close old ones. nothing is ever</div>
-    <div class="line">deleted. you can query what was true on</div>
-    <div class="line">any date.</div>
-
-    <div class="line reaction">&gt; and it forgets things?</div>
-
-    <div class="line">confidence decays over time. low-value</div>
-    <div class="line">facts get tombstoned. but facts you told</div>
-    <div class="line">me directly? those never auto-forget.</div>
-
-    <div class="line reaction">&gt; how does it extract facts</div>
-
-    <div class="line">regex patterns. "i use X", "i prefer X",</div>
-    <div class="line">"i work at X". zero LLM calls. the agent</div>
-    <div class="line">calls remember() as an MCP tool inline.</div>
-
-    <div class="line reaction">&gt; no vector database? no neo4j?</div>
-
-    <div class="line">one sqlite file. copy the file, you've</div>
-    <div class="line">copied the memory. that's the whole</div>
-    <div class="line">backup strategy.</div>
-
-    <div class="line reaction">&gt; this is actually incredible</div>
-
+  <div class="turn">
+    <div class="speaker agent">agent</div>
+    <div class="msg">
+      <p>i don't have context from our previous conversations.</p>
+      <p>could you tell me again?</p>
+    </div>
   </div>
 
-  <div class="punchline-wrap" id="punchline-wrap">
+  <div class="turn">
+    <div class="msg">
+      <p class="react">so you just... forgot everything?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p>yes. every conversation starts from zero.</p>
+      <p>i have no memory of past sessions.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">that's insane.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="turn">
+    <div class="speaker you">you</div>
+    <div class="msg">
+      <p class="react">install cairn</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="speaker agent">cairn</div>
+    <div class="msg">
+      <p><span class="check">+</span> cairn serve --stdio</p>
+      <p>ready. 6 tools: remember, recall, forget, extract, export, import.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="speaker you">you</div>
+    <div class="msg">
+      <p class="react">what database did we pick for the auth service?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="speaker agent">agent</div>
+    <div class="msg">
+      <p><span class="check">+</span> cairn.recall("auth service database")</p>
+      <p>postgres. you decided on july 15th because you needed row-level security. you also considered sqlite but ruled it out for concurrent writes.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">oh.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="speaker you">you</div>
+    <div class="msg">
+      <p class="react">i switched to neovim btw</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="speaker agent">agent</div>
+    <div class="msg">
+      <p><span class="check">+</span> cairn.remember("tamish", "uses_editor", "neovim")</p>
+      <p>got it. the old "uses vim" fact is closed, not deleted. i'll remember the history.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">wait it tracks history?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p>every fact has a validity window. new facts close old ones. nothing is ever deleted. you can query what was true on any date.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">and it forgets things?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p>confidence decays over time. low-value facts get tombstoned. but facts you told me directly? those never auto-forget.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">how does it extract facts?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p>regex patterns. "i use X", "i prefer X", "i work at X". zero LLM calls. the agent calls <span class="code">remember()</span> as an MCP tool inline.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">no vector database? no neo4j?</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p>one sqlite file. copy the file, you've copied the memory. that's the whole backup strategy.</p>
+    </div>
+  </div>
+
+  <div class="turn">
+    <div class="msg">
+      <p class="react">this is actually incredible.</p>
+    </div>
+  </div>
+
+  <div class="punchline-wrap">
     <div class="punchline">
-      agents leave <span class="accent">cairns</span> to mark<br>
-      what they learned.
+      agents leave <span class="accent">cairns</span><br>to mark what they learned.
     </div>
     <div class="punchline-sub">
       like hikers stacking stones on a trail.<br>
       the category isn't memory. it's wayfinding.
     </div>
 
-    <a href="https://github.com/valtors/cairn" class="link-out" id="link">github</a>
+    <a href="https://github.com/valtors/cairn" class="link-out">github</a>
 
-    <div class="footer-note" id="footer">
-      MIT · no cloud · one sqlite file · valtors
+    <div class="footer-note">
+      MIT &middot; no cloud &middot; one sqlite file &middot; valtors
     </div>
   </div>
 
 </div>
 
 <script>
-  /* =====================================================
-     PARTICLE NETWORK - memory graph swarm
-     dots = facts, lines = connections
-     responds to mouse, subtle drift, organic
-     ===================================================== */
   (function() {
     var canvas = document.getElementById('particles');
     var ctx = canvas.getContext('2d');
-    var W, H;
-    var mouse = { x: -999, y: -999 };
-    var dots = [];
-    var DOT_COUNT = 70;
-    var CONNECT_DIST = 140;
-    var MOUSE_DIST = 180;
+    var W, H, mouse = { x: -999, y: -999 }, dots = [];
+    var DOT_COUNT = 60, CONNECT_DIST = 130, MOUSE_DIST = 170;
     var ACCENT = { r: 138, g: 109, b: 59 };
     var GREEN = { r: 74, g: 122, b: 94 };
 
     function resize() {
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
-      DOT_COUNT = Math.min(80, Math.floor(W * H / 18000));
+      DOT_COUNT = Math.min(70, Math.floor(W * H / 20000));
     }
-
     function initDots() {
       dots = [];
       for (var i = 0; i < DOT_COUNT; i++) {
         dots.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          vx: (Math.random() - 0.5) * 0.25,
-          vy: (Math.random() - 0.5) * 0.25,
-          r: Math.random() * 1.5 + 0.5,
-          baseOpacity: Math.random() * 0.3 + 0.08,
-          accent: Math.random() > 0.75,
-          pulse: Math.random() * Math.PI * 2,
-          pulseSpeed: 0.01 + Math.random() * 0.02
+          x: Math.random()*W, y: Math.random()*H,
+          vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2,
+          r: Math.random()*1.5+0.5,
+          baseOpacity: Math.random()*0.25+0.06,
+          accent: Math.random()>0.75,
+          pulse: Math.random()*Math.PI*2,
+          pulseSpeed: 0.008+Math.random()*0.015
         });
       }
     }
-
     function animate() {
-      ctx.clearRect(0, 0, W, H);
-
-      for (var i = 0; i < dots.length; i++) {
+      ctx.clearRect(0,0,W,H);
+      for (var i=0; i<dots.length; i++) {
         var d = dots[i];
-
         d.pulse += d.pulseSpeed;
-        var pulseFactor = (Math.sin(d.pulse) + 1) / 2;
-
-        d.x += d.vx;
-        d.y += d.vy;
-
-        if (d.x < 0) { d.x = 0; d.vx *= -1; }
-        if (d.x > W) { d.x = W; d.vx *= -1; }
-        if (d.y < 0) { d.y = 0; d.vy *= -1; }
-        if (d.y > H) { d.y = H; d.vy *= -1; }
-
-        var dx = d.x - mouse.x;
-        var dy = d.y - mouse.y;
-        var mdist = Math.sqrt(dx*dx + dy*dy);
-        var mFactor = 1;
-        if (mdist < MOUSE_DIST) {
-          mFactor = 1 + (1 - mdist / MOUSE_DIST) * 2;
-        }
-
-        var opacity = d.baseOpacity * (0.5 + pulseFactor * 0.5) * mFactor;
-        var color = d.accent ? ACCENT : GREEN;
-
+        var pf = (Math.sin(d.pulse)+1)/2;
+        d.x += d.vx; d.y += d.vy;
+        if (d.x<0){d.x=0;d.vx*=-1;} if (d.x>W){d.x=W;d.vx*=-1;}
+        if (d.y<0){d.y=0;d.vy*=-1;} if (d.y>H){d.y=H;d.vy*=-1;}
+        var dx=d.x-mouse.x, dy=d.y-mouse.y, md=Math.sqrt(dx*dx+dy*dy);
+        var mf = md<MOUSE_DIST ? 1+(1-md/MOUSE_DIST)*2 : 1;
+        var op = d.baseOpacity*(0.5+pf*0.5)*mf;
+        var c = d.accent?ACCENT:GREEN;
         ctx.beginPath();
-        ctx.arc(d.x, d.y, d.r * mFactor, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + opacity + ')';
+        ctx.arc(d.x,d.y,d.r*mf,0,Math.PI*2);
+        ctx.fillStyle='rgba('+c.r+','+c.g+','+c.b+','+op+')';
         ctx.fill();
-
-        for (var j = i + 1; j < dots.length; j++) {
-          var d2 = dots[j];
-          var ddx = d.x - d2.x;
-          var ddy = d.y - d2.y;
-          var dist = Math.sqrt(ddx*ddx + ddy*ddy);
-
-          if (dist < CONNECT_DIST) {
-            var lineOpacity = (1 - dist / CONNECT_DIST) * 0.08 * mFactor;
-            var isAccent = d.accent || d2.accent;
-            var lc = isAccent ? ACCENT : GREEN;
+        for (var j=i+1;j<dots.length;j++) {
+          var d2=dots[j], ddx=d.x-d2.x, ddy=d.y-d2.y, dist=Math.sqrt(ddx*ddx+ddy*ddy);
+          if (dist<CONNECT_DIST) {
+            var lo=(1-dist/CONNECT_DIST)*0.07*mf;
+            var lc=(d.accent||d2.accent)?ACCENT:GREEN;
             ctx.beginPath();
-            ctx.moveTo(d.x, d.y);
-            ctx.lineTo(d2.x, d2.y);
-            ctx.strokeStyle = 'rgba(' + lc.r + ',' + lc.g + ',' + lc.b + ',' + lineOpacity + ')';
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+            ctx.moveTo(d.x,d.y); ctx.lineTo(d2.x,d2.y);
+            ctx.strokeStyle='rgba('+lc.r+','+lc.g+','+lc.b+','+lo+')';
+            ctx.lineWidth=0.5; ctx.stroke();
           }
         }
-
-        if (mdist < MOUSE_DIST) {
-          var lineOpacity2 = (1 - mdist / MOUSE_DIST) * 0.15;
+        if (md<MOUSE_DIST) {
+          var lo2=(1-md/MOUSE_DIST)*0.12;
           ctx.beginPath();
-          ctx.moveTo(d.x, d.y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = 'rgba(' + ACCENT.r + ',' + ACCENT.g + ',' + ACCENT.b + ',' + lineOpacity2 + ')';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
+          ctx.moveTo(d.x,d.y); ctx.lineTo(mouse.x,mouse.y);
+          ctx.strokeStyle='rgba('+ACCENT.r+','+ACCENT.g+','+ACCENT.b+','+lo2+')';
+          ctx.lineWidth=0.5; ctx.stroke();
         }
       }
-
       requestAnimationFrame(animate);
     }
-
-    window.addEventListener('mousemove', function(e) {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    });
-    window.addEventListener('mouseleave', function() {
-      mouse.x = -999;
-      mouse.y = -999;
-    });
-    window.addEventListener('touchmove', function(e) {
-      if (e.touches[0]) {
-        mouse.x = e.touches[0].clientX;
-        mouse.y = e.touches[0].clientY;
-      }
-    });
-    window.addEventListener('touchend', function() {
-      mouse.x = -999;
-      mouse.y = -999;
-    });
-
-    resize();
-    initDots();
-    animate();
-    window.addEventListener('resize', function() { resize(); initDots(); });
+    window.addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY;});
+    window.addEventListener('mouseleave',function(){mouse.x=-999;mouse.y=-999;});
+    window.addEventListener('touchmove',function(e){if(e.touches[0]){mouse.x=e.touches[0].clientX;mouse.y=e.touches[0].clientY;}});
+    window.addEventListener('touchend',function(){mouse.x=-999;mouse.y=-999;});
+    resize(); initDots(); animate();
+    window.addEventListener('resize',function(){resize();initDots();});
   })();
 
-  /* =====================================================
-     SCROLL REVEAL - lines appear as you read
-     ===================================================== */
   (function() {
-    var observer = new IntersectionObserver(function(entries) {
+    var obs = new IntersectionObserver(function(entries) {
       entries.forEach(function(e) {
         if (e.isIntersecting) {
-          var lines = e.target.querySelectorAll('.line');
-          lines.forEach(function(line, i) {
-            setTimeout(function() {
-              line.classList.add('visible');
-            }, i * 80);
-          });
-          e.target.querySelectorAll('.agent-label').forEach(function(l) {
-            l.style.opacity = '0';
-            l.style.transition = 'opacity 0.4s ease';
-            setTimeout(function() {
-              l.style.opacity = '1';
-            }, Array.from(lines).indexOf(l.nextElementSibling) * 80 - 40);
+          var turns = e.target.querySelectorAll('.turn');
+          turns.forEach(function(t, i) {
+            setTimeout(function() { t.classList.add('visible'); }, i * 100);
           });
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05 });
 
-    document.querySelectorAll('.story').forEach(function(s) {
-      var labels = s.querySelectorAll('.agent-label');
-      labels.forEach(function(l) {
-        l.style.opacity = '0';
-        l.style.transition = 'opacity 0.4s ease';
-      });
-      observer.observe(s);
+    var sections = [];
+    var content = document.querySelector('.content');
+    var children = Array.from(content.children);
+    var currentSection = [];
+    children.forEach(function(child) {
+      if (child.classList && child.classList.contains('divider')) {
+        if (currentSection.length) sections.push(currentSection);
+        currentSection = [child];
+      } else {
+        currentSection.push(child);
+      }
+    });
+    if (currentSection.length) sections.push(currentSection);
+
+    sections.forEach(function(s) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'story-section';
+      s.forEach(function(el) { content.insertBefore(wrapper, el); wrapper.appendChild(el); });
+      content.removeChild(wrapper);
+      content.appendChild(wrapper);
+      obs.observe(wrapper);
     });
 
-    var divObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        if (e.isIntersecting) e.target.classList.add('visible');
-      });
+    var divObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { threshold: 0.5 });
-    document.querySelectorAll('.divider').forEach(function(d) { divObserver.observe(d); });
+    document.querySelectorAll('.divider').forEach(function(d) { divObs.observe(d); });
 
-    var punchObserver = new IntersectionObserver(function(entries) {
+    var punchObs = new IntersectionObserver(function(entries) {
       entries.forEach(function(e) {
         if (e.isIntersecting) {
           e.target.classList.add('visible');
@@ -521,7 +539,7 @@
         }
       });
     }, { threshold: 0.2 });
-    document.querySelectorAll('.punchline-wrap').forEach(function(p) { punchObserver.observe(p); });
+    document.querySelectorAll('.punchline-wrap').forEach(function(p) { punchObs.observe(p); });
   })();
 </script>
 
