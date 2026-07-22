@@ -402,7 +402,7 @@ const mat = new THREE.ShaderMaterial({
       float pulse = (sin(uTime * 0.8 + aPhase) + 1.0) * 0.5;
       gl_PointSize = aSize * (1.0 + pulse * 0.4 + pull * 0.5) * uPixelRatio * (40.0 / -mvPos.z);
       vColor = aColor;
-      vAlpha = 0.15 + pulse * 0.1 + pull * 0.2;
+      vAlpha = 0.5 + pulse * 0.2 + pull * 0.3;
     }
   `,
   fragmentShader: `
