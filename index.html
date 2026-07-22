@@ -3,409 +3,334 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>cairn — agent wayfinding</title>
-<meta name="description" content="agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.">
+<title>cairn</title>
+<meta name="description" content="agent wayfinding. temporal knowledge store in one sqlite file.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
-  :root {
-    --bg: #fdfcf9;
-    --ink: #16130f;
-    --muted: #6b655a;
-    --accent: #8a6d3b;
-    --accent-bg: rgba(138,109,59,0.12);
-    --line: #e8e3d8;
-    --code-bg: #16130f;
-    --code-fg: #d4c9b5;
-  }
-  html { scroll-behavior: smooth; }
   body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Geist", -apple-system, system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
+    background: #fdfcf9;
+    color: #16130f;
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
     overflow-x: hidden;
+    min-height: 100vh;
   }
-  a { color: inherit; text-decoration: none; }
+
+  /* ascii background */
+  #ascii-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.06;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    line-height: 11px;
+    letter-spacing: -1px;
+    color: #8a6d3b;
+    white-space: pre;
+    user-select: none;
+  }
+
+  /* content */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 100px 24px 120px;
+  }
 
   /* nav */
   .nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(253,252,249,0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
-    padding: 16px 48px;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 64px;
+    position: fixed;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 7px;
   }
-  .nav-brand {
-    display: flex; align-items: center; gap: 8px;
-    font-weight: 600; font-size: 15px; letter-spacing: -0.3px;
+  .nav-dot {
+    width: 9px; height: 9px;
+    background: #8a6d3b;
+    border-radius: 1px;
   }
-  .nav-brand .dot {
-    width: 10px; height: 10px; background: var(--accent); border-radius: 2px;
-  }
-  .nav-links { display: flex; align-items: center; gap: 28px; }
-  .nav-links a { font-size: 14px; color: var(--muted); transition: color 0.15s; }
-  .nav-links a:hover { color: var(--ink); }
-  .nav-cta {
-    background: var(--ink); color: var(--bg);
-    padding: 8px 18px; border-radius: 8px;
-    font-size: 14px; font-weight: 500;
+  .nav-name {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: -0.3px;
+    color: #16130f;
   }
 
   /* hero */
-  .hero {
-    padding: 140px 48px 80px;
-    max-width: 960px;
-    margin: 0 auto;
-    text-align: center;
+  .hook {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 22px;
+    font-weight: 400;
+    color: rgba(22,19,15,0.5);
+    margin-bottom: 60px;
+    line-height: 1.4;
   }
-  .hero-label {
-    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 24px;
-  }
-  .hero h1 {
-    font-size: 64px; font-weight: 600; letter-spacing: -2.5px; line-height: 1.05;
-    margin-bottom: 24px;
-  }
-  .hero h1 em {
-    font-style: italic;
-    background: var(--accent-bg);
-    padding: 0 6px; border-radius: 4px;
-  }
-  .hero p {
-    font-size: 18px; color: var(--muted); max-width: 540px;
-    margin: 0 auto 36px; line-height: 1.55;
-  }
-  .hero-actions {
-    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-  }
-  .hero-actions a {
-    padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 500;
-  }
-  .hero-actions .primary {
-    background: var(--ink); color: var(--bg);
-  }
-  .hero-actions .secondary {
-    border: 1px solid var(--line); color: var(--ink);
-  }
-  .hero-meta {
-    margin-top: 24px; font-size: 12px; color: var(--muted);
-    letter-spacing: 0.5px;
+  .hook .cursor {
+    color: #8a6d3b;
+    font-weight: 700;
   }
 
-  /* sections */
-  .section {
-    padding: 80px 48px;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-  .section-label {
-    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 16px;
-  }
-  .section h2 {
-    font-size: 38px; font-weight: 600; letter-spacing: -1.3px; line-height: 1.1;
-    margin-bottom: 16px;
-  }
-  .section h2 em {
-    font-style: italic; background: var(--accent-bg); padding: 0 6px; border-radius: 4px;
-  }
-  .section p {
-    font-size: 17px; color: var(--muted); line-height: 1.55; max-width: 580px;
-  }
-
-  /* conversation */
-  .convo {
-    background: #f8f4ec;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    padding: 80px 48px;
-  }
-  .convo-inner {
-    max-width: 680px; margin: 0 auto;
-  }
-  .convo-label {
-    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 32px; text-align: center;
-  }
-  .convo-block { margin-bottom: 40px; }
-  .convo-block:last-child { margin-bottom: 0; }
-  .speaker {
-    font-size: 11px; font-weight: 600; letter-spacing: 1px;
-    text-transform: uppercase; margin-bottom: 10px;
-  }
-  .speaker.you { color: var(--accent); }
-  .speaker.agent { color: #4a7a5e; }
-  .msg {
-    font-size: 15px; line-height: 1.55; padding: 14px 18px;
-    border-radius: 8px; margin-bottom: 6px;
-  }
-  .msg.you { background: var(--bg); border: 1px solid var(--line); }
-  .msg.agent { background: transparent; border-left: 2px solid #4a7a5e; padding-left: 14px; color: var(--muted); }
-  .msg.tool {
-    background: var(--code-bg); color: var(--code-fg);
-    font-family: "Geist Mono", monospace; font-size: 13px;
-    padding: 12px 16px;
-  }
-  .msg.tool .check { color: #7ab583; }
-
-  /* features */
-  .features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    border-top: 1px solid var(--line);
-  }
-  .feat {
-    padding: 36px 32px;
-    border-bottom: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-  }
-  .feat:nth-child(even) { border-right: none; }
-  .feat-num {
-    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 8px;
-  }
-  .feat h3 {
-    font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px;
-  }
-  .feat p {
-    font-size: 14px; color: var(--muted); line-height: 1.5;
-  }
-
-  /* code block */
-  .code-section {
-    padding: 80px 48px;
-    background: #f8f4ec;
-    border-top: 1px solid var(--line);
-    border-bottom:  1px solid var(--line);
-  }
-  .code-inner {
-    max-width: 680px; margin: 0 auto;
-  }
-  .code-label {
-    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 16px;
-  }
-  .code-block {
-    background: var(--code-bg);
-    border-radius: 10px;
-    padding: 24px 28px;
-    font-family: "Geist Mono", monospace;
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: var(--code-fg);
-    overflow-x: auto;
+  /* terminal banner */
+  .terminal-banner {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    color: rgba(22,19,15,0.7);
+    line-height: 1.5;
+    margin-bottom: 48px;
     white-space: pre;
   }
-  .code-block .prompt { color: var(--accent); }
-  .code-block .flag { color: #7ab583; }
-  .code-block .comment { color: #6b655a; }
-  .code-block .key { color: #c9a96e; }
+  .terminal-banner .dim { color: rgba(22,19,15,0.4); }
 
-  /* CTA */
-  .cta {
-    padding: 100px 48px;
-    text-align: center;
-    max-width: 680px;
-    margin: 0 auto;
+  /* story */
+  .story {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 15px;
+    line-height: 1.7;
   }
-  .cta h2 {
-    font-size: 38px; font-weight: 600; letter-spacing: -1.3px; line-height: 1.1;
+  .agent-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 32px;
+    margin-bottom: 8px;
+  }
+  .agent-label:first-of-type { margin-top: 0; }
+  .agent-label.you { color: #8a6d3b; }
+  .agent-label.agent { color: #4a7a5e; }
+  .line {
+    color: rgba(22,19,15,0.7);
+    margin-bottom: 2px;
+  }
+  .line.prompt { color: rgba(22,19,15,0.5); }
+  .line.tool { color: #4a7a5e; }
+  .line.tool .check { color: #7ab583; }
+  .line.reaction { color: rgba(22,19,15,0.8); font-style: italic; }
+
+  /* divider */
+  .divider {
+    margin: 48px 0;
+    border: none;
+    border-top: 1px solid rgba(138,109,59,0.15);
+  }
+
+  /* punchline */
+  .punchline {
+    font-family: "Inter", sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    line-height: 1.25;
     margin-bottom: 16px;
+    margin-top: 60px;
   }
-  .cta h2 em {
-    font-style: italic; background: var(--accent-bg); padding: 0 6px; border-radius: 4px;
+  .punchline .accent {
+    color: #8a6d3b;
+    font-style: italic;
   }
-  .cta p {
-    font-size: 16px; color: var(--muted); margin-bottom: 32px;
+  .punchline-sub {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    color: rgba(22,19,15,0.5);
+    line-height: 1.6;
+    margin-bottom: 48px;
   }
-  .cta-actions {
-    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-  }
-  .cta-actions a {
-    padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 500;
-  }
-  .cta-actions .primary { background: var(--ink); color: var(--bg); }
-  .cta-actions .secondary { border: 1px solid var(--line); color: var(--ink); }
 
-  /* footer */
-  footer {
-    border-top: 1px solid var(--line);
-    padding: 40px 48px;
-    text-align: center;
-    font-size: 13px; color: var(--muted);
+  /* link */
+  .link-out {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -2px;
+    color: #8a6d3b;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    display: inline-block;
+    margin-top: 40px;
   }
-  footer a { color: var(--accent); }
-  footer a:hover { color: var(--ink); }
+  .link-out:hover { color: #16130f; }
 
-  /* fade */
-  .fade { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
-  .fade.visible { opacity: 1; transform: translateY(0); }
+  .footer-note {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: rgba(22,19,15,0.3);
+    margin-top: 60px;
+  }
 
   /* mobile */
-  @media (max-width: 700px) {
-    .nav { padding: 14px 20px; }
-    .nav-links { display: none; }
-    .hero { padding: 100px 24px 60px; }
-    .hero h1 { font-size: 38px; letter-spacing: -1.5px; }
-    .hero p { font-size: 16px; }
-    .section { padding: 60px 24px; }
-    .section h2 { font-size: 28px; letter-spacing: -1px; }
-    .features-grid { grid-template-columns: 1fr; }
-    .feat { border-right: none; }
-    .convo, .code-section { padding: 60px 24px; }
-    .cta h2 { font-size: 28px; }
-    .code-block { font-size: 12px; padding: 18px; }
+  @media (max-width: 640px) {
+    .content { padding: 80px 20px 100px; }
+    .hook { font-size: 18px; }
+    .story { font-size: 14px; }
+    .terminal-banner { font-size: 11px; }
+    .punchline { font-size: 22px; }
+    .link-out { font-size: 32px; }
   }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-brand">
-    <div class="dot"></div>
-    cairn
-  </div>
-  <div class="nav-links">
-    <a href="#how">how it works</a>
-    <a href="#features">features</a>
-    <a href="#install">install</a>
-    <a href="https://github.com/valtors/cairn">github</a>
-    <a href="https://github.com/valtors/cairn" class="nav-cta">get started</a>
-  </div>
-</nav>
-
-<section class="hero fade">
-  <div class="hero-label">agent wayfinding</div>
-  <h1>your agent forgot <em>everything</em>.</h1>
-  <p>every conversation starts from zero. cairn fixes that. one sqlite file. temporal knowledge. your agent remembers what it learned, forgets what went stale, and finds its way back.</p>
-  <div class="hero-actions">
-    <a href="https://github.com/valtors/cairn" class="primary">github</a>
-    <a href="#install" class="secondary">install</a>
-  </div>
-  <div class="hero-meta">MIT · NO CLOUD · ONE SQLITE FILE</div>
-</section>
-
-<section class="convo fade" id="how">
-  <div class="convo-inner">
-    <div class="convo-label">without cairn</div>
-    <div class="convo-block">
-      <div class="speaker you">you</div>
-      <div class="msg you">what database did we pick for the auth service?</div>
-      <div class="speaker agent">agent</div>
-      <div class="msg agent">i don't have context from our previous conversations. could you tell me again?</div>
-    </div>
-
-    <div class="convo-label">with cairn</div>
-    <div class="convo-block">
-      <div class="speaker you">you</div>
-      <div class="msg you">what database did we pick for the auth service?</div>
-      <div class="speaker agent">agent</div>
-      <div class="msg agent">postgres. you decided on july 15th because you needed row-level security. you also considered sqlite but ruled it out for concurrent writes.</div>
-      <div class="msg tool"><span class="check">+</span> cairn.recall("auth service database")</div>
-    </div>
-
-    <div class="convo-block">
-      <div class="speaker you">you</div>
-      <div class="msg you">i switched to neovim btw</div>
-      <div class="speaker agent">agent</div>
-      <div class="msg agent">got it. updated your editor preference. the old "uses vim" fact is closed, not deleted. i'll remember the history if you ask.</div>
-      <div class="msg tool"><span class="check">+</span> cairn.remember("tamish", "uses_editor", "neovim")</div>
-    </div>
-  </div>
-</section>
-
-<section class="section fade" id="features">
-  <div class="section-label">what makes it different</div>
-  <h2>not a knowledge graph. not a vector store. <em>wayfinding</em>.</h2>
-  <p>agents leave cairns to mark what they learned and where they've been. like hikers stacking stones on a trail. the category isn't memory. it's finding your way back.</p>
-</section>
-
-<div class="features-grid">
-  <div class="feat">
-    <div class="feat-num">01 — temporal</div>
-    <h3>nothing gets deleted</h3>
-    <p>facts have validity windows. new facts close old ones. query what was true on any date. history isn't erased, it's superseded.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">02 — extraction</div>
-    <h3>zero LLM calls</h3>
-    <p>patterns catch "i use X", "i prefer X", "i work at X". the agent calls remember() as an MCP tool. no extra inference, no extra cost.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">03 — forgetting</div>
-    <h3>decay, not deletion</h3>
-    <p>confidence decays over time. low-confidence facts get tombstoned. user-stated facts (confidence >= 0.8) never auto-forget. auditable.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">04 — sync</div>
-    <h3>federated, not centralized</h3>
-    <p>vector clocks. CRDT-style merge. conflict resolution by confidence, then recency, then device id. no server required.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">05 — query</div>
-    <h3>no query language</h3>
-    <p>keywords find entry points. graph traversal walks the subgraph. ranking by confidence and recency. returns json. no cypher, no sparql.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">06 — storage</div>
-    <h3>one file</h3>
-    <p>a single sqlite database. no neo4j. no postgres. no cloud. copy the file, you've copied the memory. that's the whole backup strategy.</p>
-  </div>
+<div class="nav">
+  <div class="nav-dot"></div>
+  <div class="nav-name">cairn</div>
 </div>
 
-<section class="code-section fade" id="install">
-  <div class="code-inner">
-    <div class="code-label">install</div>
-    <div class="code-block"><span class="comment"># clone and build</span>
-<span class="prompt">$</span> git clone https://github.com/valtors/cairn
-<span class="prompt">$</span> cd cairn && cargo build --release
+<canvas id="ascii-bg"></canvas>
 
-<span class="comment"># store what your agent learns</span>
-<span class="prompt">$</span> cairn remember --subject tamish --predicate uses_editor --object vim
-<span class="flag">remembered</span>: 71838f5f-18d7-46f1...
+<div class="content">
 
-<span class="comment"># ask it later</span>
-<span class="prompt">$</span> cairn recall "tamish uses_editor"
-<span class="key">vim</span> (confidence: 1.0, recorded: 2026-07-22)
+  <div class="hook">&gt; your agent has <span class="cursor">amnesia</span></div>
 
-<span class="comment"># extract from conversation, zero LLM</span>
-<span class="prompt">$</span> cairn extract "i use rust and i live in bangalore"
-<span class="flag">extracted</span>: 2 facts, 2 stored
+  <div class="terminal-banner">  ___
+ / _ \  ___  _ __  __ _  ___ _ __
+| | | |/ _ \| '_ \/ _` |/ _ \ '__|
+| |_| | (_) | | | \__, \  __/ |
+ \__,_|\___/|_| |_|___/\___|_|  v0.1
 
-<span class="comment"># run as MCP server</span>
-<span class="prompt">$</span> cairn serve --stdio</div>
+  one sqlite file. zero cloud.</div>
+
+  <div class="story">
+
+    <div class="agent-label you">you</div>
+    <div class="line">what database did we pick for the auth service?</div>
+
+    <div class="agent-label agent">agent</div>
+    <div class="line">i don't have context from our previous conversations.</div>
+    <div class="line">could you tell me again?</div>
+
+    <div class="line reaction">&gt; so you just... forgot everything?</div>
+
+    <div class="line">yes. every conversation starts from zero.</div>
+    <div class="line">i have no memory of past sessions.</div>
+
+    <div class="line reaction">&gt; that's insane</div>
+
   </div>
-</section>
 
-<section class="cta fade">
-  <h2>it's open source. <em>no cloud tier.</em></h2>
-  <p>MIT licensed. one sqlite file. no neo4j, no postgres, no saas. fork it, ship it, make it yours.</p>
-  <div class="cta-actions">
-    <a href="https://github.com/valtors/cairn" class="primary">github</a>
-    <a href="https://github.com/valtors/cairn/blob/main/SPEC.md" class="secondary">read the spec</a>
+  <hr class="divider">
+
+  <div class="story">
+
+    <div class="agent-label you">you</div>
+    <div class="line">install cairn</div>
+
+    <div class="agent-label agent">cairn</div>
+    <div class="line tool"><span class="check">+</span> cairn serve --stdio</div>
+    <div class="line">ready. 6 tools: remember, recall, forget,</div>
+    <div class="line">extract, export, import.</div>
+
+    <div class="agent-label you">you</div>
+    <div class="line">what database did we pick for the auth service?</div>
+
+    <div class="agent-label agent">agent</div>
+    <div class="line tool"><span class="check">+</span> cairn.recall("auth service database")</div>
+    <div class="line">postgres. you decided on july 15th because</div>
+    <div class="line">you needed row-level security. you also</div>
+    <div class="line">considered sqlite but ruled it out for</div>
+    <div class="line">concurrent writes.</div>
+
+    <div class="line reaction">&gt; oh</div>
+
+    <div class="agent-label you">you</div>
+    <div class="line">i switched to neovim btw</div>
+
+    <div class="agent-label agent">agent</div>
+    <div class="line tool"><span class="check">+</span> cairn.remember("tamish", "uses_editor", "neovim")</div>
+    <div class="line">got it. the old "uses vim" fact is closed,</div>
+    <div class="line">not deleted. i'll remember the history.</div>
+
+    <div class="line reaction">&gt; wait it tracks history?</div>
+
+    <div class="line">every fact has a validity window.</div>
+    <div class="line">new facts close old ones. nothing is ever</div>
+    <div class="line">deleted. you can query what was true on</div>
+    <div class="line">any date.</div>
+
+    <div class="line reaction">&gt; and it forgets things?</div>
+
+    <div class="line">confidence decays over time. low-value</div>
+    <div class="line">facts get tombstoned. but facts you told</div>
+    <div class="line">me directly? those never auto-forget.</div>
+
+    <div class="line reaction">&gt; how does it extract facts</div>
+
+    <div class="line">regex patterns. "i use X", "i prefer X",</div>
+    <div class="line">"i work at X". zero LLM calls. the agent</div>
+    <div class="line">calls remember() as an MCP tool inline.</div>
+
+    <div class="line reaction">&gt; no vector database? no neo4j?</div>
+
+    <div class="line">one sqlite file. copy the file, you've</div>
+    <div class="line">copied the memory. that's the whole</div>
+    <div class="line">backup strategy.</div>
+
+    <div class="line reaction">&gt; this is actually incredible</div>
+
   </div>
-</section>
 
-<footer>
-  <a href="https://github.com/valtors">valtors</a> · agent wayfinding · MIT
-</footer>
+  <div class="punchline">
+    agents leave <span class="accent">cairns</span> to mark<br>
+    what they learned.
+  </div>
+  <div class="punchline-sub">
+    like hikers stacking stones on a trail.<br>
+    the category isn't memory. it's wayfinding.
+  </div>
+
+  <a href="https://github.com/valtors/cairn" class="link-out">github</a>
+
+  <div class="footer-note">
+    MIT · no cloud · one sqlite file · valtors
+  </div>
+
+</div>
 
 <script>
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) {
-      if (e.isIntersecting) e.target.classList.add('visible');
-    });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.fade').forEach(function(el) { observer.observe(el); });
+  // generate ascii art background
+  (function() {
+    var canvas = document.getElementById('ascii-bg');
+    var ctx = canvas.getContext('2d');
+    var chars = ['+', '*', '#', '=', '%', '@', '-', '|', '/', '\\', '.', ':', '~'];
+    var cols, rows, cellSize = 11;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      cols = Math.ceil(canvas.width / cellSize) + 1;
+      rows = Math.ceil(canvas.height / cellSize) + 1;
+      draw();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#8a6d3b';
+      ctx.textBaseline = 'top';
+      for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+          if (Math.random() > 0.7) {
+            var ch = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(ch, x * cellSize, y * cellSize);
+          }
+        }
+      }
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+  })();
 </script>
 
 </body>
