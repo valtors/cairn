@@ -17,29 +17,29 @@
   body{font-family:'Inter',sans-serif;background:#f5f0e8;color:#1a1a1a;line-height:1.65;font-size:17px;overflow-x:hidden;}
   #bg-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;}
   .content{position:relative;z-index:1;}
-  .hero{text-align:center;padding:140px 24px 80px;max-width:680px;margin:0 auto;}
-  .hero h1{font-size:42px;font-weight:700;letter-spacing:-1.5px;margin-bottom:16px;color:#1a1a1a;}
-  .hero h1 em{font-style:italic;color:#8a6d3b;background:rgba(138,109,59,0.08);padding:0 4px;border-radius:3px;}
-  .hero p{font-size:17px;color:#666;max-width:480px;margin:0 auto;}
-  .story{max-width:620px;margin:0 auto;padding:40px 24px;}
-  .story-section{margin-bottom:64px;opacity:0;}
-  .divider{height:1px;background:#e0d8cc;margin:48px auto;width:0;}
-  .turn{margin-bottom:36px;}
-  .speaker{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-  .speaker .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-  .speaker .label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#999;}
-  .msg{font-size:17px;line-height:1.65;color:#333;}
-  .msg code{font-family:'JetBrains Mono',monospace;font-size:14px;background:rgba(138,109,59,0.1);padding:1px 5px;border-radius:3px;color:#8a6d3b;}
-  .punchline{text-align:center;padding:64px 24px;max-width:620px;margin:0 auto;opacity:0;}
-  .punchline h2{font-size:28px;font-weight:600;color:#1a1a1a;margin-bottom:32px;line-height:1.4;}
-  .punchline h2 em{font-style:italic;color:#8a6d3b;}
-  .punchline a{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1a1a1a;text-decoration:none;border-bottom:2px solid #8a6d3b;padding-bottom:4px;transition:color .2s;}
-  .punchline a:hover{color:#8a6d3b;}
-  .footer{text-align:center;padding:40px 24px 80px;font-size:13px;color:#aaa;font-family:'JetBrains Mono',monospace;opacity:0;}
+  .hero{text-align:center;padding:160px 24px 100px;max-width:680px;margin:0 auto;}
+  .hero h1{font-size:48px;font-weight:700;letter-spacing:-2px;margin-bottom:18px;color:#1a1a1a;}
+  .hero h1 em{font-style:italic;color:#8a6d3b;background:rgba(138,109,59,0.12);padding:0 6px;border-radius:4px;}
+  .hero p{font-size:18px;color:#777;max-width:480px;margin:0 auto;}
+  .story{max-width:620px;margin:0 auto;padding:20px 24px;}
+  .story-section{margin-bottom:64px;}
+  .divider{height:1px;background:#d4c9b8;margin:48px auto;max-width:500px;}
+  .turn{margin-bottom:40px;}
+  .speaker{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .speaker .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .speaker .label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#999;}
+  .msg{font-size:18px;line-height:1.7;color:#2a2a2a;}
+  .msg code{font-family:'JetBrains Mono',monospace;font-size:15px;background:rgba(138,109,59,0.12);padding:2px 6px;border-radius:4px;color:#8a6d3b;}
+  .punchline{text-align:center;padding:80px 24px;max-width:620px;margin:0 auto;}
+  .punchline h2{font-size:32px;font-weight:600;color:#1a1a1a;margin-bottom:36px;line-height:1.35;}
+  .punchline h2 em{font-style:italic;color:#8a6d3b;background:rgba(138,109,59,0.12);padding:0 6px;border-radius:4px;}
+  .punchline a{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1a1a1a;text-decoration:none;border-bottom:2px solid #8a6d3b;padding-bottom:4px;transition:color .2s,border-color .2s;}
+  .punchline a:hover{color:#8a6d3b;border-color:#1a1a1a;}
+  .footer{text-align:center;padding:40px 24px 100px;font-size:13px;color:#aaa;font-family:'JetBrains Mono',monospace;}
   .dot-you{background:#8a6d3b;}
   .dot-agent{background:#4a7a5e;}
   .dot-cairn{background:#4a7a5e;}
-  @media(max-width:600px){.hero h1{font-size:32px;}.story,.punchline{padding:32px 16px;}.hero{padding:100px 16px 60px;}}
+  @media(max-width:600px){.hero h1{font-size:34px;}.story,.punchline{padding:32px 16px;}.hero{padding:120px 16px 80px;}.punchline h2{font-size:26px;}}
 </style>
 </head>
 <body>
@@ -51,85 +51,47 @@
   </div>
   <div class="story">
     <div class="story-section" id="s1">
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div>
-        <div class="msg">what did we talk about last week?</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div>
-        <div class="msg">i don't have access to previous conversations. each session is independent.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div>
-        <div class="msg">so you forgot the entire architecture we designed?</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div>
-        <div class="msg">yes. and the debugging session. and the deployment plan. and your preferences.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div>
-        <div class="msg">that's insane.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div>
-        <div class="msg">it's the default.</div>
-      </div>
+      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">what did we talk about last week?</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">i don't have access to previous conversations. each session is independent.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">so you forgot the entire architecture we designed?</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">yes. and the debugging session. and the deployment plan. and your preferences.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">that's insane.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-agent"></span><span class="label">agent</span></div><div class="msg">it's the default.</div></div>
     </div>
-    <div class="divider" id="d1"></div>
+    <div class="divider"></div>
     <div class="story-section" id="s2">
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div>
-        <div class="msg">ok. so what if the agent could remember?</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div>
-        <div class="msg">it can. <code>cairn remember "user prefers dark mode"</code></div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div>
-        <div class="msg">that fact now exists forever. or until it's stale.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div>
-        <div class="msg"><code>cairn recall "what os does tamish use"</code> returns it. with timestamps.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div>
-        <div class="msg"><code>cairn forget --dry-run</code> shows what's decayed. old facts fade.</div>
-      </div>
-      <div class="turn">
-        <div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div>
-        <div class="msg">one sqlite file. no server. no cloud. zero llm calls.</div>
-      </div>
+      <div class="turn"><div class="speaker"><span class="dot dot-you"></span><span class="label">you</span></div><div class="msg">ok. so what if the agent could remember?</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">it can. <code>cairn remember "user prefers dark mode"</code></div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">that fact now exists forever. or until it's stale.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg"><code>cairn recall "what os does tamish use"</code> returns it. with timestamps.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg"><code>cairn forget --dry-run</code> shows what's decayed. old facts fade.</div></div>
+      <div class="turn"><div class="speaker"><span class="dot dot-cairn"></span><span class="label">cairn</span></div><div class="msg">one sqlite file. no server. no cloud. zero llm calls.</div></div>
     </div>
   </div>
-  <div class="punchline" id="punchline">
+  <div class="punchline">
     <h2>agents leave cairns to mark <em>what they learned</em></h2>
     <a href="https://github.com/valtors/cairn">github</a>
   </div>
-  <div class="footer" id="footer">mit license. rust. one file. no dependencies on you.</div>
+  <div class="footer">mit license. rust. one file. no dependencies on you.</div>
 </div>
 <script>
-var cairnScene, cairnRenderer, cairnCamera, cairnPoints, cairnMat, cairnClock;
-var cairnMouse = {x: 0, y: 0};
-var cairnTarget = {x: 0, y: 0};
-var cairnScrollY = 0;
+var cScene, cRenderer, cCamera, cPoints, cMat, cLines, cClock;
+var cMouse = {x:0, y:0}, cTarget = {x:0, y:0}, cScrollY = 0;
 
-function initCairnThree() {
+function initCairn() {
   if (typeof THREE === 'undefined') return;
   var canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
 
-  cairnScene = new THREE.Scene();
-  cairnCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-  cairnCamera.position.z = 60;
+  cScene = new THREE.Scene();
+  cCamera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);
+  cCamera.position.z = 50;
 
-  cairnRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-  cairnRenderer.setSize(window.innerWidth, window.innerHeight);
-  cairnRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  cRenderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true});
+  cRenderer.setSize(window.innerWidth, window.innerHeight);
+  cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  var COUNT = 180;
+  var COUNT = 120;
   var positions = new Float32Array(COUNT * 3);
   var colors = new Float32Array(COUNT * 3);
   var sizes = new Float32Array(COUNT);
@@ -137,18 +99,18 @@ function initCairnThree() {
 
   var cStone = new THREE.Color('#8a6d3b');
   var cGreen = new THREE.Color('#4a7a5e');
-  var cWarm = new THREE.Color('#c4a35a');
+  var cWarm = new THREE.Color('#b8975a');
 
   for (var i = 0; i < COUNT; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 140;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 90;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+    positions[i*3] = (Math.random() - 0.5) * 120;
+    positions[i*3+1] = (Math.random() - 0.5) * 80;
+    positions[i*3+2] = (Math.random() - 0.5) * 40;
     var r = Math.random();
-    var c = r > 0.72 ? cStone : (r > 0.5 ? cGreen : cWarm);
-    colors[i * 3] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
-    sizes[i] = Math.random() * 2.5 + 0.8;
+    var c = r > 0.6 ? cStone : (r > 0.35 ? cWarm : cGreen);
+    colors[i*3] = c.r;
+    colors[i*3+1] = c.g;
+    colors[i*3+2] = c.b;
+    sizes[i] = Math.random() * 3 + 1.5;
     phases[i] = Math.random() * Math.PI * 2;
   }
 
@@ -158,112 +120,112 @@ function initCairnThree() {
   geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
   geo.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
 
-  var vshader = [
-    'attribute float size;',
-    'attribute float phase;',
-    'uniform float uTime;',
-    'uniform vec2 uMouse;',
-    'uniform float uPixelRatio;',
-    'varying vec3 vColor;',
-    'varying float vAlpha;',
-    'void main() {',
-    '  vColor = color;',
-    '  vec3 pos = position;',
-    '  float drift = sin(uTime * 0.3 + phase) * 1.5;',
-    '  pos.y += drift;',
-    '  pos.x += cos(uTime * 0.2 + phase) * 0.8;',
-    '  vec2 toMouse = uMouse - pos.xy;',
-    '  float md = length(toMouse);',
-    '  float pull = smoothstep(30.0, 0.0, md) * 4.0;',
-    '  pos.xy -= normalize(toMouse + 0.001) * pull;',
-    '  vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);',
-    '  gl_Position = projectionMatrix * mvPos;',
-    '  float pulse = (sin(uTime * 0.8 + phase) + 1.0) * 0.5;',
-    '  gl_PointSize = size * (1.0 + pulse * 0.4 + pull * 0.5) * uPixelRatio * (40.0 / -mvPos.z);',
-    '  vAlpha = 0.4 + pulse * 0.2 + pull * 0.3;',
-    '}'
-  ].join('\n');
-
-  var fshader = [
-    'varying vec3 vColor;',
-    'varying float vAlpha;',
-    'void main() {',
-    '  vec2 uv = gl_PointCoord - 0.5;',
-    '  float d = length(uv);',
-    '  if (d > 0.5) discard;',
-    '  float glow = 1.0 - smoothstep(0.0, 0.5, d);',
-    '  glow = pow(glow, 1.5);',
-    '  gl_FragColor = vec4(vColor, glow * vAlpha);',
-    '}'
-  ].join('\n');
-
-  cairnMat = new THREE.ShaderMaterial({
+  cMat = new THREE.ShaderMaterial({
     uniforms: {
-      uTime: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
-      uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
+      uTime: {value:0},
+      uMouse: {value: new THREE.Vector2(0, 0)},
+      uPixelRatio: {value: Math.min(window.devicePixelRatio, 2)}
     },
-    vertexShader: vshader,
-    fragmentShader: fshader,
+    vertexShader: [
+      'attribute float size;',
+      'attribute float phase;',
+      'uniform float uTime;',
+      'uniform vec2 uMouse;',
+      'uniform float uPixelRatio;',
+      'varying vec3 vColor;',
+      'varying float vAlpha;',
+      'void main() {',
+      '  vColor = color;',
+      '  vec3 pos = position;',
+      '  pos.y += sin(uTime * 0.3 + phase) * 2.0;',
+      '  pos.x += cos(uTime * 0.2 + phase) * 1.5;',
+      '  vec2 toMouse = uMouse - pos.xy;',
+      '  float md = length(toMouse);',
+      '  float pull = smoothstep(35.0, 0.0, md) * 5.0;',
+      '  pos.xy -= normalize(toMouse + 0.001) * pull;',
+      '  vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);',
+      '  gl_Position = projectionMatrix * mvPos;',
+      '  float pulse = (sin(uTime * 0.8 + phase) + 1.0) * 0.5;',
+      '  gl_PointSize = size * (1.5 + pulse * 0.6 + pull * 0.8) * uPixelRatio * (35.0 / -mvPos.z);',
+      '  vAlpha = 0.6 + pulse * 0.25 + pull * 0.35;',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying vec3 vColor;',
+      'varying float vAlpha;',
+      'void main() {',
+      '  vec2 uv = gl_PointCoord - 0.5;',
+      '  float d = length(uv);',
+      '  if (d > 0.5) discard;',
+      '  float glow = 1.0 - smoothstep(0.0, 0.5, d);',
+      '  glow = pow(glow, 1.5);',
+      '  gl_FragColor = vec4(vColor, glow * vAlpha);',
+      '}'
+    ].join('\n'),
     transparent: true,
     blending: THREE.NormalBlending,
     depthWrite: false,
     vertexColors: true
   });
 
-  cairnPoints = new THREE.Points(geo, cairnMat);
-  cairnScene.add(cairnPoints);
+  cPoints = new THREE.Points(geo, cMat);
+  cScene.add(cPoints);
 
-  var lineGeo = new THREE.BufferGeometry();
-  var linePositions = new Float32Array(COUNT * COUNT * 3 * 2);
-  var lineColors = new Float32Array(COUNT * COUNT * 3 * 2);
-  var li = 0;
+  var linePositions = [];
+  var lineAlphas = [];
   for (var a = 0; a < COUNT; a++) {
     for (var b = a + 1; b < COUNT; b++) {
-      var dx = positions[a * 3] - positions[b * 3];
-      var dy = positions[a * 3 + 1] - positions[b * 3 + 1];
-      var dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 18) {
-        linePositions[li * 3] = positions[a * 3];
-        linePositions[li * 3 + 1] = positions[a * 3 + 1];
-        linePositions[li * 3 + 2] = positions[a * 3 + 2];
-        li++;
-        linePositions[li * 3] = positions[b * 3];
-        linePositions[li * 3 + 1] = positions[b * 3 + 1];
-        linePositions[li * 3 + 2] = positions[b * 3 + 2];
-        li++;
+      var dx = positions[a*3] - positions[b*3];
+      var dy = positions[a*3+1] - positions[b*3+1];
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 16) {
+        linePositions.push(positions[a*3], positions[a*3+1], positions[a*3+2]);
+        linePositions.push(positions[b*3], positions[b*3+1], positions[b*3+2]);
+        lineAlphas.push(1.0 - dist / 16);
+        lineAlphas.push(1.0 - dist / 16);
       }
     }
   }
-  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions.slice(0, li * 3), 3));
-  var lineMat = new THREE.LineBasicMaterial({
-    color: 0x8a6d3b,
+  var lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+  lineGeo.setAttribute('alpha', new THREE.Float32BufferAttribute(lineAlphas, 1));
+  var lineMat = new THREE.ShaderMaterial({
+    uniforms: { uTime: {value:0} },
+    vertexShader: [
+      'attribute float alpha;',
+      'varying float vAlpha;',
+      'void main() {',
+      '  vAlpha = alpha;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying float vAlpha;',
+      'void main() {',
+      '  gl_FragColor = vec4(0.54, 0.43, 0.23, vAlpha * 0.25);',
+      '}'
+    ].join('\n'),
     transparent: true,
-    opacity: 0.08,
-    blending: THREE.NormalBlending
+    blending: THREE.NormalBlending,
+    depthWrite: false
   });
-  var lines = new THREE.LineSegments(lineGeo, lineMat);
-  cairnScene.add(lines);
+  cLines = new THREE.LineSegments(lineGeo, lineMat);
+  cScene.add(cLines);
 
-  cairnClock = new THREE.Clock();
+  cClock = new THREE.Clock();
 
   window.addEventListener('mousemove', function(e) {
-    cairnTarget.x = (e.clientX / window.innerWidth - 0.5) * 140;
-    cairnTarget.y = -(e.clientY / window.innerHeight - 0.5) * 90;
+    cTarget.x = (e.clientX / window.innerWidth - 0.5) * 120;
+    cTarget.y = -(e.clientY / window.innerHeight - 0.5) * 80;
   });
-  window.addEventListener('mouseleave', function() {
-    cairnTarget.x = 0;
-    cairnTarget.y = 0;
-  });
-  window.addEventListener('scroll', function() {
-    cairnScrollY = window.scrollY;
-  });
+  window.addEventListener('mouseleave', function() { cTarget.x = 0; cTarget.y = 0; });
+  window.addEventListener('scroll', function() { cScrollY = window.scrollY; });
   window.addEventListener('resize', function() {
-    cairnCamera.aspect = window.innerWidth / window.innerHeight;
-    cairnCamera.updateProjectionMatrix();
-    cairnRenderer.setSize(window.innerWidth, window.innerHeight);
-    cairnRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    cairnMat.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
+    cCamera.aspect = window.innerWidth / window.innerHeight;
+    cCamera.updateProjectionMatrix();
+    cRenderer.setSize(window.innerWidth, window.innerHeight);
+    cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    cMat.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
   });
 
   animateCairn();
@@ -271,66 +233,92 @@ function initCairnThree() {
 
 function animateCairn() {
   requestAnimationFrame(animateCairn);
-  if (!cairnMat || !cairnRenderer) return;
-  var t = cairnClock.getElapsedTime();
-  cairnMat.uniforms.uTime.value = t;
-  cairnMouse.x += (cairnTarget.x - cairnMouse.x) * 0.04;
-  cairnMouse.y += (cairnTarget.y - cairnMouse.y) * 0.04;
-  cairnMat.uniforms.uMouse.value.x = cairnMouse.x;
-  cairnMat.uniforms.uMouse.value.y = cairnMouse.y;
-  cairnCamera.position.y = -cairnScrollY * 0.01;
-  cairnCamera.position.x = cairnMouse.x * 0.03;
-  cairnCamera.lookAt(0, cairnCamera.position.y, 60);
-  cairnPoints.rotation.y = t * 0.02;
-  cairnRenderer.render(cairnScene, cairnCamera);
+  if (!cMat || !cRenderer) return;
+  var t = cClock.getElapsedTime();
+  cMat.uniforms.uTime.value = t;
+  cMouse.x += (cTarget.x - cMouse.x) * 0.05;
+  cMouse.y += (cTarget.y - cMouse.y) * 0.05;
+  cMat.uniforms.uMouse.value.x = cMouse.x;
+  cMat.uniforms.uMouse.value.y = cMouse.y;
+  cCamera.position.y = -cScrollY * 0.015;
+  cCamera.position.x = cMouse.x * 0.04;
+  cCamera.lookAt(0, cCamera.position.y, 50);
+  cPoints.rotation.y = t * 0.03;
+  cLines.rotation.y = t * 0.03;
+  cRenderer.render(cScene, cCamera);
 }
 
-initCairnThree();
+initCairn();
 </script>
 <script>
 gsap.registerPlugin(ScrollTrigger);
 
-window.addEventListener('load', function() {
-  gsap.from('.hero h1', { y: 20, opacity: 0, duration: 0.8, ease: 'power2.out' });
-  gsap.from('.hero p', { y: 20, opacity: 0, duration: 0.8, delay: 0.15, ease: 'power2.out' });
+document.addEventListener('DOMContentLoaded', function() {
+  gsap.from('.hero h1', {y: 30, opacity: 0, duration: 1, ease: 'power3.out'});
+  gsap.from('.hero p', {y: 20, opacity: 0, duration: 0.8, delay: 0.3, ease: 'power3.out'});
 
-  gsap.to('#s1', {
-    opacity: 1, duration: 0.6, ease: 'power2.out',
-    scrollTrigger: { trigger: '#s1', start: 'top 80%' }
-  });
-  gsap.to('#s2', {
-    opacity: 1, duration: 0.6, ease: 'power2.out',
-    scrollTrigger: { trigger: '#s2', start: 'top 80%' }
-  });
-  gsap.to('#d1', {
-    width: '80%', duration: 1, ease: 'power2.inOut',
-    scrollTrigger: { trigger: '#d1', start: 'top 85%' }
-  });
-
-  gsap.from('#s1 .turn', {
-    opacity: 0, x: -20, duration: 0.4, stagger: 0.08, ease: 'power2.out',
-    scrollTrigger: { trigger: '#s1', start: 'top 75%' }
-  });
-  gsap.from('#s2 .turn', {
-    opacity: 0, x: -20, duration: 0.4, stagger: 0.08, ease: 'power2.out',
-    scrollTrigger: { trigger: '#s2', start: 'top 75%' }
+  gsap.utils.toArray('.turn').forEach(function(turn, i) {
+    gsap.from(turn, {
+      opacity: 0,
+      y: 40,
+      duration: 0.6,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: turn,
+        start: 'top 88%',
+        toggleActions: 'play none none none'
+      }
+    });
   });
 
-  gsap.to('#punchline', {
-    opacity: 1, duration: 0.8, ease: 'power2.out',
-    scrollTrigger: { trigger: '#punchline', start: 'top 70%' }
+  gsap.fromTo('.divider', {
+    scaleX: 0,
+    opacity: 0
+  }, {
+    scaleX: 1,
+    opacity: 1,
+    duration: 1.2,
+    ease: 'power2.inOut',
+    scrollTrigger: {
+      trigger: '.divider',
+      start: 'top 85%',
+      toggleActions: 'play none none none'
+    }
   });
-  gsap.from('#punchline h2', {
-    y: 20, opacity: 0, duration: 0.6, delay: 0.1, ease: 'power2.out',
-    scrollTrigger: { trigger: '#punchline', start: 'top 70%' }
+
+  gsap.from('.punchline h2', {
+    opacity: 0,
+    y: 40,
+    duration: 0.8,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: '.punchline',
+      start: 'top 75%',
+      toggleActions: 'play none none none'
+    }
   });
-  gsap.from('#punchline a', {
-    y: 10, opacity: 0, duration: 0.5, delay: 0.3, ease: 'power2.out',
-    scrollTrigger: { trigger: '#punchline', start: 'top 70%' }
+
+  gsap.from('.punchline a', {
+    opacity: 0,
+    y: 20,
+    duration: 0.6,
+    delay: 0.3,
+    ease: 'power2.out',
+    scrollTrigger: {
+      trigger: '.punchline',
+      start: 'top 75%',
+      toggleActions: 'play none none none'
+    }
   });
-  gsap.to('#footer', {
-    opacity: 1, duration: 0.6, ease: 'power2.out',
-    scrollTrigger: { trigger: '#footer', start: 'top 90%' }
+
+  gsap.from('.footer', {
+    opacity: 0,
+    duration: 0.6,
+    scrollTrigger: {
+      trigger: '.footer',
+      start: 'top 95%',
+      toggleActions: 'play none none none'
+    }
   });
 });
 </script>
