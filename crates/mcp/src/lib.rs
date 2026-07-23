@@ -1,3 +1,12 @@
+//! MCP server exposing remember / cairn / forget / export / import / extract.
+//!
+//! any MCP-compatible agent gets memory for free. the agent calls
+//! `remember()` during its response. the agent calls `cairn()` to query.
+//! that's it. two commands that turn any agent into one that remembers.
+//!
+//! protocol: JSON-RPC 2.0 over stdio. no HTTP, no SSE, no WebSocket.
+//! the agent talks, cairn listens, cairn answers.
+
 use cairn_extract::extract_from_text;
 use cairn_forget::{run as run_forget, ForgetOptions};
 use cairn_query::{query, QueryOptions};
@@ -13,6 +22,7 @@ pub fn handle_remember(store: &Store, args: &Value) -> Result<Value, String> {
 
     let opts = RememberOptions {
         valid_from: None,
+        recorded_at: None,
         confidence,
         source: source.map(|s| s.to_string()),
         device_id: None,
@@ -90,6 +100,7 @@ pub fn handle_extract(store: &Store, args: &Value) -> Result<Value, String> {
     for fact in &extracted {
         let opts = RememberOptions {
             valid_from: None,
+            recorded_at: None,
             confidence: Some(fact.confidence),
             source: Some(fact.source.clone()),
             device_id: None,

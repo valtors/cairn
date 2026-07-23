@@ -1,3 +1,13 @@
+//! federated sync. your phone agent and laptop agent share a brain.
+//!
+//! peer-to-peer sync via vector clocks. conflict resolution is
+//! deterministic. no server required.
+//!
+//! sync is just export + import with conflict resolution. two devices
+//! exchange bundles. same (subject, predicate) with different objects:
+//! highest confidence wins, then most recent, then device id
+//! lexicographic. no ambiguity.
+
 use cairn_store::{Fact, Store};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

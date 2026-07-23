@@ -1,3 +1,12 @@
+//! temporal sqlite engine for agent memory.
+//!
+//! facts are triples: subject, predicate, object. each carries a validity
+//! window (valid_from / valid_until) and a recording time (recorded_at).
+//! when a new fact contradicts an old one, the old fact closes. it doesn't
+//! delete. you can query the past.
+//!
+//! one sqlite file. one schema. zero external services.
+
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -26,6 +35,7 @@ pub struct Fact {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RememberOptions {
     pub valid_from: Option<String>,
+    pub recorded_at: Option<String>,
     pub confidence: Option<f64>,
     pub source: Option<String>,
     pub device_id: Option<String>,
@@ -35,6 +45,7 @@ impl Default for RememberOptions {
     fn default() -> Self {
         Self {
             valid_from: None,
+            recorded_at: None,
             confidence: None,
             source: None,
             device_id: None,
@@ -49,6 +60,9 @@ pub struct Store {
 
 impl Store {
     pub fn open<P: AsRef<Path>>(path: P, device_id: Option<String>) -> Result<Self, String> {
+        if let Some(parent) = path.as_ref().parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
         let conn = Connection::open(path).map_err(|e| e.to_string())?;
         conn.execute_batch(
             "PRAGMA journal_mode=WAL;
@@ -109,6 +123,10 @@ impl Store {
         Ok(())
     }
 
+    /// store a fact. if an active fact with the same (subject, predicate)
+    /// exists and the object matches, confidence is bumped and the vector
+    /// clock merges. if the object differs, the old fact closes (valid_until
+    /// set) and the new one opens. contradiction is not deletion.
     pub fn remember(
         &self,
         subject: &str,
@@ -118,6 +136,7 @@ impl Store {
     ) -> Result<String, String> {
         let now = Utc::now().to_rfc3339();
         let valid_from = opts.valid_from.unwrap_or_else(|| now.clone());
+        let recorded_at = opts.recorded_at.unwrap_or_else(|| now.clone());
         let confidence = opts.confidence.unwrap_or(1.0);
         let source = opts.source.unwrap_or_else(|| "user".to_string());
         let device_id = opts.device_id.unwrap_or_else(|| self.device_id.clone());
@@ -152,7 +171,7 @@ impl Store {
             .execute(
                 "INSERT INTO facts (id, subject, predicate, object, valid_from, valid_until, recorded_at, confidence, source, device_id, vector_clock)
                  VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)",
-                params![id, subject, predicate, object, valid_from, now, confidence, source, device_id, vc],
+                params![id, subject, predicate, object, valid_from, recorded_at, confidence, source, device_id, vc],
             )
             .map_err(|e| e.to_string())?;
 
@@ -196,6 +215,9 @@ impl Store {
         Ok(facts)
     }
 
+    /// point-in-time query. returns facts that were known before `as_of`
+    /// and were still valid at that point. closed facts are included if
+    /// they hadn't closed yet.
     pub fn facts_as_of(&self, as_of: &str) -> Result<Vec<Fact>, String> {
         let mut stmt = self
             .conn
@@ -220,6 +242,8 @@ impl Store {
         Ok(())
     }
 
+    /// soft-delete a fact. the fact stays in the database with a tombstone
+    /// flag and a reason. forgetting is auditable.
     pub fn tombstone(&self, fact_id: &str, reason: &str) -> Result<(), String> {
         self.conn
             .execute(

@@ -1,3 +1,12 @@
+//! semantic entry points + graph traversal + ranking.
+//!
+//! the agent says `recall("what os does tamish use")` and gets back a
+//! subgraph. no cypher, no sql. text matching finds entry points, traversal
+//! follows relationships, ranking returns what matters.
+//!
+//! this is not a vector database. similarity is brute-force text matching
+//! on subject + object. memory is small. it's fast enough.
+
 use cairn_store::{Fact, Store};
 use cairn_traverse::traverse;
 use serde::{Deserialize, Serialize};

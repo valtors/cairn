@@ -1,3 +1,15 @@
+//! cairn - agent wayfinding. temporal knowledge store in one sqlite file.
+//!
+//! MCP gave agents tools. cairn gives them a path.
+//!
+//! usage:
+//!   cairn remember --subject tamish --predicate uses_os --object linux
+//!   cairn recall "what os does tamish use"
+//!   cairn forget --older-than-days 30
+//!   cairn export > my-memory.json
+//!   cairn import --file my-memory.json
+//!   cairn serve    (runs as MCP server on stdio)
+
 use clap::{Parser, Subcommand};
 use cairn_mcp::{dispatch, list_tools};
 use cairn_store::{RememberOptions, Store};
@@ -88,6 +100,7 @@ fn main() {
         Commands::Remember { subject, predicate, object, confidence, source } => {
             let opts = RememberOptions {
                 valid_from: None,
+                recorded_at: None,
                 confidence,
                 source: source.map(|s| s.to_string()),
                 device_id: None,

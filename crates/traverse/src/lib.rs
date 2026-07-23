@@ -1,3 +1,12 @@
+//! graph traversal over temporal facts.
+//!
+//! given entry subjects, walk the graph by following objects to their
+//! own facts. depth-limited. respects temporal validity: if you pass an
+//! `as_of` timestamp, only facts that were known and still valid at that
+//! point are returned.
+//!
+//! this is a recursive CTE done in application code. no neo4j. no cypher.
+
 use cairn_store::Fact;
 use rusqlite::{params, Connection};
 use std::collections::{HashMap, HashSet};

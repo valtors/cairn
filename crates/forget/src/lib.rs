@@ -1,3 +1,12 @@
+//! forgetting as a first-class operation.
+//!
+//! facts decay by confidence, access frequency, and age. stale facts get
+//! tombstoned (soft delete with reason). forgetting is auditable. memory
+//! gets better over time, not just bigger.
+//!
+//! facts with confidence >= 0.8 are never forgotten unless `force` is set.
+//! the agent's direct knowledge is protected. inferred patterns are not.
+
 use chrono::{DateTime, Utc};
 use cairn_store::{Fact, Store};
 
@@ -25,6 +34,11 @@ pub struct ForgetResult {
     pub reasons: Vec<(String, String)>,
 }
 
+/// decay = confidence * (1 / (1 + days_since_accessed)) * log(access_count + 1)
+///
+/// a fact that was never accessed and has low confidence decays fast.
+/// a fact that was accessed recently and has high confidence stays.
+/// a fact with confidence >= 0.8 is immune unless force is set.
 pub fn decay_score(fact: &Fact) -> f64 {
     let confidence = fact.confidence;
     let now = Utc::now();
