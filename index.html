@@ -222,12 +222,12 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 <div class="metric">
 <div class="num">0.92</div>
 <div class="label">avg confidence across active facts</div>
-<div class="trend"><span class="arrow">\u2191</span> +12% from last session</div>
+<div class="trend"><span class="arrow">&#8593;</span> +12% from last session</div>
 </div>
 <div class="metric">
 <div class="num">38</div>
 <div class="label">facts stored / 4 stale</div>
-<div class="trend"><span class="arrow">\u2191</span> +6 new this session</div>
+<div class="trend"><span class="arrow">&#8593;</span> +6 new this session</div>
 </div>
 </div>
 <div class="data-table">
@@ -374,7 +374,7 @@ gsap.utils.toArray('.split').forEach(function(s){gsap.from(s,{opacity:0,y:40,dur
 gsap.from('.punchline h2',{opacity:0,y:40,duration:0.8,scrollTrigger:{trigger:'.punchline',start:'top 75%'}});
 gsap.from('.punchline .actions',{opacity:0,y:20,duration:0.6,delay:0.2,scrollTrigger:{trigger:'.punchline',start:'top 75%'}});
 gsap.from('footer .footer-inner > *',{opacity:0,y:15,duration:0.5,stagger:0.08,scrollTrigger:{trigger:'footer',start:'top 95%'}});
-document.querySelectorAll('.float-card .metric .num').forEach(function(el){var target=parseFloat(el.textContent);var isFloat=el.textContent.includes('.');gsap.fromTo(el,{textContent:0},{textContent:target,duration:1.5,delay:0.5,ease:'power2.out',snap:{textContent:isFloat?0.01:1},onUpdate:function(){el.textContent=isFloat?parseFloat(el.textContent).toFixed(2):Math.round(parseFloat(el.textContent));}});});
+document.querySelectorAll('.float-card .metric .num').forEach(function(el){var raw=el.textContent;var target=parseFloat(raw);if(isNaN(target))return;var isFloat=raw.includes('.');gsap.fromTo(el,{textContent:0},{textContent:target,duration:1.5,delay:0.5,ease:'power2.out',snap:{textContent:isFloat?0.01:1},onUpdate:function(){el.textContent=isFloat?parseFloat(el.textContent).toFixed(2):Math.round(parseFloat(el.textContent));}});});
 });
 </script>
 </body>
