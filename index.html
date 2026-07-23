@@ -3,1155 +3,565 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>cairn - agent memory that actually works</title>
+<title>cairn — agent wayfinding</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f4f3f1;
-  --card:#ffffff;
-  --card-grad:linear-gradient(180deg,#ffffff 0%,#fafaf8 100%);
-  --dark:#1a1a1a;
-  --dark-2:#232323;
-  --text:#1a1a1a;
-  --text-muted:#6b6b6b;
-  --text-dark-muted:#9a9a98;
-  --text-light:#a0a0a0;
-  --border:#e2e1df;
-  --border-soft:#ecebe9;
-  --border-dark:#2e2e2e;
-  --accent:#e2643c;
-  --accent-soft:#fbf0eb;
-  --accent-glow:rgba(226,100,60,0.25);
-  --green:#5a9d5f;
-  --green-soft:#e8f5e9;
-  --yellow:#e0a82e;
-  --red:#d4453a;
-  --red-soft:#fbe9e9;
-  --shadow-sm:0 4px 12px rgba(0,0,0,0.04);
-  --shadow:0 10px 30px rgba(0,0,0,0.06);
-  --shadow-lg:0 20px 50px rgba(0,0,0,0.08);
-  --shadow-dark:0 30px 60px rgba(0,0,0,0.28);
-  --shadow-xl:0 30px 70px rgba(0,0,0,0.06);
-  --r-sm:10px;
-  --r:16px;
-  --r-lg:24px;
-  --r-xl:32px;
-  --r-pill:100px;
+--black:#0a0a0a;--ink:#1a1a1a;--white:#fff;--paper:#fafafa;
+--g50:#f5f5f5;--g100:#f0f0f0;--g200:#e5e5e5;--g300:#d5d5d5;
+--g400:#a0a0a0;--g500:#707070;--g600:#4a4a4a;--g700:#2a2a2a;
+--border:#e5e5e5;--border-mid:#d0d0d0;--border-strong:#1a1a1a;
 }
-
 html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--white);color:var(--ink);font-size:15px;line-height:1.6;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:multiply}
+.mono{font-family:'JetBrains Mono','SF Mono',monospace;font-weight:400}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-weight:400}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
 
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
-}
+nav{padding:24px 0;border-bottom:1px solid var(--border)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between}
+.nav-left{display:flex;align-items:center;gap:28px}
+.nav-brand{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;letter-spacing:-.02em}
+.nav-brand::after{content:'.'}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:13px;color:var(--g500);transition:color .2s}
+.nav-links a:hover{color:var(--black)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.btn-star{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--border-strong);border-radius:6px;font-size:12px;font-weight:500;transition:all .15s}
+.btn-star:hover{background:var(--black);color:var(--white)}
+.btn-star svg{width:13px;height:13px}
 
-.serif{font-family:'Instrument Serif',serif;font-weight:400}
-.mono{font-family:'JetBrains Mono',monospace}
+.hero{padding:80px 0 100px}
+.hero .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:64px;align-items:center}
+.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g500);margin-bottom:20px;letter-spacing:.02em}
+.hero h1{font-size:60px;line-height:1.02;letter-spacing:-.03em;font-weight:700;margin-bottom:24px;color:var(--black)}
+.hero h1 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
+.hero-sub{font-size:18px;color:var(--g600);line-height:1.55;margin-bottom:6px}
+.hero-tag{font-size:15px;color:var(--g500);line-height:1.55;margin-bottom:32px}
+.cta-group{display:flex;gap:12px;margin-bottom:20px}
+.btn-primary{display:inline-flex;align-items:center;padding:12px 20px;background:var(--black);color:var(--white);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--black);transition:all .15s;cursor:pointer}
+.btn-primary:hover{background:var(--g700);border-color:var(--g700)}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:12px 20px;background:var(--white);color:var(--black);border:1px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer}
+.btn-secondary:hover{background:var(--g50)}
+.hero-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g500)}
+.hero-badge span{color:var(--g300)}
 
-/* grain texture overlay */
-body::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
-  opacity:0.012;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
+.hero-right{position:relative;display:flex;justify-content:center;align-items:center}
+.illustration{width:100%;max-width:400px}
+.illustration svg{width:100%;height:auto}
+.terminal{position:absolute;bottom:-30px;left:-20px;width:320px;background:var(--white);border:1px solid var(--border-strong);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.06);overflow:hidden}
+.terminal-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--g50)}
+.term-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--g300)}
+.term-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500);margin-left:6px}
+.terminal-body{padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8}
+.term-line{color:var(--ink)}
+.term-prompt{color:var(--g400);margin-right:4px}
+.term-out{color:var(--g500);padding-left:12px}
+.term-cursor{display:inline-block;width:7px;height:13px;background:var(--black);animation:blink 1s steps(1) infinite;vertical-align:text-bottom}
+@keyframes blink{50%{opacity:0}}
 
+.built-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:18px 0;background:var(--g50)}
+.built-bar .wrap{display:flex;align-items:center;justify-content:center;gap:32px}
+.built-bar .label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g500)}
+.built-bar .items{display:flex;gap:28px;align-items:center}
+.built-bar .item{font-size:13px;font-weight:500;color:var(--g600);letter-spacing:-.01em}
 
-.container{max-width:1200px;margin:0 auto;padding:0 32px}
+.dashboard{padding:100px 0}
+.dashboard .wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:24px}
+.card{border:1px solid var(--border);border-radius:12px;padding:32px;background:var(--white);transition:border-color .2s}
+.card:hover{border-color:var(--border-mid)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--g100)}
+.card-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--black)}
+.live-dot{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500)}
+.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--black);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.2}}
+.card-link{font-size:12px;color:var(--g500);display:inline-flex;align-items:center;gap:4px;transition:color .15s}
+.card-link:hover{color:var(--black)}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.metric{display:flex;flex-direction:column;gap:4px}
+.metric-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500);letter-spacing:.03em}
+.metric-value{font-size:32px;font-weight:700;letter-spacing:-.03em;color:var(--black)}
+.metric-delta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500)}
+.bar-chart{display:flex;align-items:flex-end;gap:3px;height:48px;padding-top:8px;border-top:1px solid var(--g100)}
+.bar{flex:1;background:var(--g300);border-radius:1px;min-height:4px;transition:background .2s}
+.bar.active{background:var(--black)}
+.fact-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.fact-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--g100)}
+.fact-item:last-child{border-bottom:none;padding-bottom:0}
+.fact-text{font-size:14px;color:var(--g600);line-height:1.4}
+.fact-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g400);white-space:nowrap;padding-top:2px}
+.fact-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--black);margin-right:8px;vertical-align:middle}
 
-/* === NAV === */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  background:rgba(245,245,245,0.85);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border-soft);
-}
-.nav-inner{
-  max-width:1200px;margin:0 auto;
-  padding:16px 32px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.nav-logo{
-  font-weight:800;font-size:20px;letter-spacing:-0.03em;
-  color:var(--text);text-decoration:none;
-}
-.nav-logo span{color:var(--accent)}
-.nav-links{display:flex;gap:28px;align-items:center}
-.nav-links a{
-  font-size:14px;font-weight:500;color:var(--text-muted);
-  text-decoration:none;transition:color .2s;
-}
-.nav-links a:hover{color:var(--text)}
-.nav-cta{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 18px;background:var(--accent);color:#fff;
-  border-radius:var(--r-pill);font-size:14px;font-weight:600;
-  text-decoration:none;transition:transform .2s,box-shadow .2s;
-  box-shadow:0 4px 14px rgba(226,100,60,0.25);
-}
-.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(226,100,60,0.3)}
+.concept{padding:100px 0;border-top:1px solid var(--border)}
+.concept .wrap{text-align:center;max-width:800px}
+.section-head{margin-bottom:60px}
+.section-head h2{font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:700;margin-bottom:16px}
+.section-head h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.section-head p{font-size:17px;color:var(--g500);line-height:1.5}
+.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:48px}
+.feature-box{border:1px solid var(--border);border-radius:12px;padding:28px;text-align:left;transition:border-color .2s}
+.feature-box:hover{border-color:var(--border-mid)}
+.feature-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g400);margin-bottom:12px;letter-spacing:.04em}
+.feature-title{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--black)}
+.feature-desc{font-size:13px;color:var(--g500);line-height:1.5;margin-bottom:16px}
+.feature-tag{display:inline-block;padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g600)}
+.feature-tag.dark{background:var(--black);color:var(--white);border-color:var(--black)}
+.concept-statement{margin-top:24px}
+.concept-statement .line1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.concept-statement .line1 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.concept-statement .line2{font-size:15px;color:var(--g500)}
 
-@media(max-width:768px){.nav-links{display:none}}
+.mechanism{padding:100px 0;border-top:1px solid var(--border)}
+.mech-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:56px}
+.mech-box{border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;min-height:200px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color .2s}
+.mech-box:hover{border-color:var(--border-mid)}
+.mech-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--black);margin-bottom:24px}
+.mech-visual{flex:1;display:flex;align-items:center;justify-content:center;padding:16px 0}
+.mech-foot{font-size:13px;color:var(--g500);font-style:italic}
+.mech-bottom{text-align:center;padding:0 40px}
+.mech-bottom .big{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.mech-bottom .big em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.mech-bottom .small{font-size:14px;color:var(--g500)}
 
-/* === HERO === */
-.hero{padding:140px 0 60px;position:relative}
+.commands{padding:100px 0;border-top:1px solid var(--border)}
+.cmd-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.cmd-box{border:1px solid var(--border);border-radius:12px;padding:32px;transition:border-color .2s}
+.cmd-box:hover{border-color:var(--border-mid)}
+.cmd-num{font-family:'Instrument Serif',serif;font-style:italic;font-size:48px;color:var(--g300);line-height:1;margin-bottom:16px}
+.cmd-title{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--black);margin-bottom:8px}
+.cmd-desc{font-size:13px;color:var(--g500);margin-bottom:20px;line-height:1.5}
+.cmd-code{font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px 14px;background:var(--g50);border:1px solid var(--border);border-radius:6px;color:var(--ink)}
 
-.hero-content{max-width:680px;margin:0 auto;text-align:center;margin-bottom:60px}
-.hero-tag{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 16px;background:var(--accent-soft);
-  border:1px solid rgba(226,100,60,0.15);
-  border-radius:var(--r-pill);font-size:13px;font-weight:600;
-  color:var(--accent);margin-bottom:24px;
-}
-.hero-tag::before{
-  content:'';width:6px;height:6px;border-radius:50%;
-  background:var(--accent);
-}
-.hero h1{
-  font-size:clamp(40px,5.5vw,64px);
-  font-weight:800;letter-spacing:-0.04em;line-height:1.05;
-  margin-bottom:20px;
-}
-.hero h1 em{
-  font-family:'Instrument Serif',serif;font-style:italic;
-  font-weight:400;color:var(--accent);
-}
-.hero p{
-  font-size:18px;color:var(--text-muted);line-height:1.6;
-  max-width:520px;margin:0 auto 32px;
-}
-.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn-primary{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:13px 28px;background:var(--accent);color:#fff;
-  border-radius:var(--r-pill);font-size:15px;font-weight:600;
-  text-decoration:none;transition:all .2s;
-  box-shadow:0 8px 24px rgba(226,100,60,0.25);
-}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(226,100,60,0.35)}
-.btn-secondary{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:13px 28px;background:var(--card);color:var(--text);
-  border:1px solid var(--border);border-radius:var(--r-pill);
-  font-size:15px;font-weight:600;text-decoration:none;
-  transition:all .2s;
-}
-.btn-secondary:hover{border-color:var(--text);box-shadow:var(--shadow-sm)}
-.btn-dark{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 24px;background:var(--dark);color:#fff;
-  border-radius:var(--r-sm);font-size:14px;font-weight:600;
-  text-decoration:none;transition:opacity .2s;
-}
-.btn-dark:hover{opacity:0.85}
-.btn-light{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 24px;background:#fff;color:var(--dark);
-  border-radius:var(--r-sm);font-size:14px;font-weight:600;
-  text-decoration:none;transition:opacity .2s;
-}
-.btn-light:hover{opacity:0.85}
+.cta-bar{padding:80px 0;background:var(--black);color:var(--white)}
+.cta-bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:40px}
+.cta-text{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;max-width:500px}
+.cta-text em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.cta-btns{display:flex;gap:12px;flex-shrink:0}
+.cta-dark{padding:12px 20px;background:var(--white);color:var(--black);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;border:none;cursor:pointer;transition:opacity .15s}
+.cta-dark:hover{opacity:.85}
+.cta-light{padding:12px 20px;background:transparent;color:var(--white);border:1px solid var(--g700);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.cta-light:hover{background:var(--g700)}
 
-/* === HERO CARD SHOWCASE === */
-.showcase{
-  display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;
-  margin-bottom:80px;align-items:start;
-}
-@media(max-width:900px){.showcase{grid-template-columns:1fr;gap:32px}}
+footer{padding:60px 0 40px;border-top:1px solid var(--border)}
+footer .wrap{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px}
+.foot-brand{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;margin-bottom:12px}
+.foot-brand::after{content:'.'}
+.foot-tag{font-size:13px;color:var(--g500);line-height:1.5;max-width:240px}
+.foot-col h4{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--black);margin-bottom:14px}
+.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.foot-col a{font-size:13px;color:var(--g500);transition:color .15s}
+.foot-col a:hover{color:var(--black)}
+.foot-bottom{max-width:1120px;margin:40px auto 0;padding:24px 40px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.foot-bottom p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g400)}
 
-/* Dark tall card (left) */
-.showcase-dark{
-  background:var(--dark);border-radius:var(--r-xl);
-  padding:40px;box-shadow:var(--shadow-dark);
-  color:#fff;display:flex;flex-direction:column;
-  min-height:480px;
+@media(max-width:860px){
+.hero .wrap{grid-template-columns:1fr;gap:40px}
+.hero h1{font-size:40px}
+.dashboard .wrap,.feature-row,.mech-row,.cmd-row{grid-template-columns:1fr}
+.cta-bar .wrap{flex-direction:column;text-align:center}
+footer .wrap{grid-template-columns:1fr 1fr}
+.terminal{position:relative;bottom:auto;left:auto;width:100%;max-width:380px;margin:20px auto 0}
+.foot-bottom{flex-direction:column;gap:8px;text-align:center}
 }
-.showcase-dark h2{
-  font-family:'Instrument Serif',serif;font-weight:400;
-  font-size:32px;line-height:1.15;margin-bottom:16px;
-  letter-spacing:-0.01em;
-}
-.showcase-dark p{
-  font-size:15px;color:var(--text-dark-muted);line-height:1.5;
-  margin-bottom:auto;
-}
-.showcase-dark .btn-light{margin-top:32px;align-self:flex-start}
-
-/* File list inside dark card */
-.file-list{margin-top:24px}
-.file-list-head{
-  font-size:12px;font-weight:600;color:var(--text-dark-muted);
-  text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;
-}
-.file-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 0;border-bottom:1px solid var(--border-dark);
-}
-.file-item:last-child{border-bottom:none}
-.file-item .fi-left{display:flex;align-items:center;gap:10px}
-.file-item .fi-icon{
-  width:32px;height:32px;background:#1a1a1a;border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;color:var(--text-dark-muted);
-}
-.file-item .fi-name{font-size:13px;color:#fff;font-weight:500}
-.file-item .fi-badge{
-  font-size:10px;font-weight:700;padding:2px 6px;
-  background:var(--accent);color:#fff;border-radius:4px;
-  margin-left:8px;vertical-align:middle;
-}
-.file-item .fi-action{
-  font-size:13px;color:var(--text-dark-muted);cursor:pointer;
-  transition:color .2s;
-}
-.file-item .fi-action:hover{color:#fff}
-
-/* Light card with grid (middle) */
-.showcase-light{
-  background:var(--card-grad);border-radius:var(--r-xl);
-  padding:40px;box-shadow:var(--shadow-lg);
-}
-.showcase-light h2{
-  font-size:24px;font-weight:700;letter-spacing:-0.02em;
-  margin-bottom:16px;line-height:1.3;
-}
-.showcase-light p{
-  font-size:15px;color:var(--text-muted);line-height:1.5;
-  margin-bottom:24px;
-}
-.doc-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;
-  margin-bottom:24px;
-}
-.doc-item{
-  background:var(--bg);border:1px solid var(--border-soft);
-  border-radius:var(--r);padding:16px;
-  display:flex;flex-direction:column;gap:8px;
-  transition:border-color .2s,box-shadow .2s;
-}
-.doc-item:hover{border-color:var(--border);box-shadow:var(--shadow-sm)}
-.doc-item .di-icon{
-  width:36px;height:36px;background:var(--card);
-  border:1px solid var(--border-soft);border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-}
-.doc-item .di-icon .ai-badge{
-  position:absolute;bottom:-4px;right:-4px;
-  font-size:8px;font-weight:700;padding:1px 4px;
-  background:var(--accent);color:#fff;border-radius:4px;
-}
-.doc-item .di-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
-.doc-item.active{background:var(--dark);border-color:var(--dark)}
-.doc-item.active .di-icon{background:#2a2a2a;border-color:#333}
-.doc-item.active .di-name{color:#fff}
-
-/* Split card (right) */
-.showcase-split{
-  border-radius:var(--r-xl);overflow:hidden;
-  box-shadow:var(--shadow-lg);
-  display:flex;flex-direction:column;
-}
-.split-top{
-  background:var(--dark);padding:40px;color:#fff;
-  flex:1;
-}
-.split-top h2{
-  font-family:'Instrument Serif',serif;font-weight:400;
-  font-size:28px;line-height:1.2;margin-bottom:12px;
-}
-.split-top p{
-  font-size:14px;color:var(--text-dark-muted);line-height:1.5;
-  margin-bottom:20px;
-}
-.info-box{
-  background:#1a1a1a;border-radius:var(--r);padding:16px;
-  font-size:13px;color:#ccc;line-height:1.5;margin-bottom:20px;
-}
-.split-bottom{
-  background:var(--card);padding:32px;
-}
-.split-bottom p{
-  font-size:14px;color:var(--text-muted);line-height:1.5;
-  margin-bottom:16px;
-}
-.split-bottom .btn-dark{margin-bottom:20px}
-.split-file-list{margin-top:8px}
-.split-file-head{
-  font-size:12px;font-weight:600;color:var(--text-muted);
-  text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;
-}
-.split-file-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 0;border-bottom:1px solid var(--border-soft);
-}
-.split-file-item:last-child{border-bottom:none}
-.split-file-item .sfi-left{display:flex;align-items:center;gap:8px}
-.split-file-item .sfi-icon{
-  width:28px;height:28px;background:var(--bg);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;font-size:12px;
-}
-.split-file-item .sfi-name{font-size:13px;color:var(--text);font-weight:500}
-.split-file-item .sfi-dl{font-size:14px;color:var(--text-muted);cursor:pointer}
-
-/* === METRICS === */
-.metrics{padding:40px 0}
-.metrics-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:24px;
-}
-@media(max-width:768px){.metrics-grid{grid-template-columns:repeat(2,1fr)}}
-.metric{
-  text-align:center;padding:28px 16px;
-  background:var(--card-grad);border-radius:var(--r);box-shadow:var(--shadow-sm);
-  border:1px solid var(--border-soft);
-}
-.metric-val{
-  font-size:36px;font-weight:800;letter-spacing:-0.03em;
-  color:var(--text);line-height:1;
-}
-.metric-val span{color:var(--accent)}
-.metric-lbl{font-size:13px;color:var(--text-muted);margin-top:8px;font-weight:500}
-
-/* === SECTION === */
-.section{padding:80px 0}
-.section-head{text-align:center;margin-bottom:56px}
-.section-head h2{
-  font-size:clamp(32px,4vw,48px);font-weight:800;
-  letter-spacing:-0.03em;line-height:1.1;margin-bottom:16px;
-}
-.section-head h2 em{
-  font-family:'Instrument Serif',serif;font-style:italic;
-  font-weight:400;color:var(--accent);
-}
-.section-head p{
-  font-size:17px;color:var(--text-muted);max-width:560px;margin:0 auto;
-}
-
-/* === FEATURES === */
-.features-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
-}
-@media(max-width:768px){.features-grid{grid-template-columns:1fr}}
-
-.feature-card{
-  background:var(--card-grad);border-radius:var(--r-lg);padding:32px;
-  box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;
-  position:relative;border:1px solid var(--border-soft);
-}
-.feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-.feature-icon{
-  width:44px;height:44px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  margin-bottom:20px;
-}
-.feature-icon.orange{background:var(--accent-soft);color:var(--accent)}
-.feature-icon.green{background:var(--green-soft);color:var(--green)}
-.feature-icon.dark{background:#f0f0f0;color:var(--dark)}
-.feature-card h3{
-  font-size:18px;font-weight:700;margin-bottom:10px;letter-spacing:-0.01em;
-}
-.feature-card p{
-  font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;
-}
-.feature-tag{
-  display:inline-block;padding:4px 12px;
-  background:var(--border-soft);border-radius:var(--r-pill);
-  font-family:'JetBrains Mono',monospace;font-size:12px;
-  font-weight:500;color:var(--text-muted);
-}
-
-/* === DASHBOARD PREVIEW === */
-.dashboard-wrap{
-  background:var(--card-grad);border-radius:var(--r-xl);
-  padding:48px;box-shadow:var(--shadow-xl);
-  margin:0 auto;max-width:1000px;border:1px solid var(--border-soft);
-}
-@media(max-width:768px){.dashboard-wrap{padding:28px;border-radius:var(--r-lg)}}
-
-.dash-head{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:32px;
-}
-.dash-title{font-size:20px;font-weight:700;letter-spacing:-0.01em}
-.dash-subtitle{font-size:13px;color:var(--text-muted)}
-.dash-live{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:5px 14px;background:var(--green-soft);
-  border-radius:var(--r-pill);font-size:12px;font-weight:600;color:var(--green);
-}
-.dash-live::before{
-  content:'';width:7px;height:7px;border-radius:50%;background:var(--green);
-}
-
-.dash-grid{
-  display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;
-  margin-bottom:24px;
-}
-@media(max-width:768px){.dash-grid{grid-template-columns:1fr}}
-
-.dash-card{
-  background:var(--bg);border-radius:var(--r);padding:24px;
-  border:1px solid var(--border-soft);
-}
-.dash-card-label{
-  font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
-  color:var(--text-muted);font-weight:600;margin-bottom:12px;
-}
-.dash-card-val{font-size:32px;font-weight:800;letter-spacing:-0.03em;line-height:1}
-.dash-card-val.accent{color:var(--accent)}
-.dash-card-desc{font-size:13px;color:var(--text-muted);margin-top:6px}
-.dash-card-chart{margin-top:16px}
-
-/* Mini bar chart */
-.mini-bars{display:flex;gap:4px;align-items:flex-end;height:48px}
-.mini-bars .mb{
-  flex:1;border-radius:3px 3px 0 0;background:var(--accent);
-  opacity:0.15;transition:opacity .3s;
-}
-.mini-bars .mb.h{opacity:1}
-.mini-bars .mb.m{opacity:0.5}
-.mini-bars .mb.l{opacity:0.25}
-
-/* Donut chart */
-.donut-wrap{position:relative;width:72px;height:72px}
-.donut{transform:rotate(-90deg)}
-.donut-track{stroke:var(--border-soft);stroke-width:5;fill:none}
-.donut-fill{stroke:var(--accent);stroke-width:5;fill:none;
-  stroke-dasharray:226;stroke-linecap:round;
-  transition:stroke-dashoffset .8s ease;
-}
-.donut-text{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-size:16px;font-weight:700;color:var(--text);
-}
-
-/* Segmented progress bar */
-.seg-bar{display:flex;gap:3px;margin:12px 0}
-.seg-bar .seg{
-  width:5px;height:16px;border-radius:2px;background:var(--border-soft);
-}
-.seg-bar .seg.active{background:var(--accent)}
-.seg-bar .seg.green{background:var(--green)}
-
-/* Terminal */
-.terminal{
-  background:var(--dark);border-radius:var(--r);
-  padding:24px 28px;font-family:'JetBrains Mono',monospace;
-  font-size:13px;line-height:1.8;overflow-x:auto;
-  box-shadow:var(--shadow);
-}
-.terminal-head{display:flex;gap:8px;margin-bottom:16px}
-.terminal-head .dot{width:12px;height:12px;border-radius:50%}
-.terminal-head .dot.r{background:#ff5f57}
-.terminal-head .dot.y{background:#ffbd2e}
-.terminal-head .dot.g{background:#28ca42}
-.terminal-head .title{margin-left:auto;font-size:12px;color:#666}
-.terminal .cmd{color:#888}
-.terminal .cmd::before{content:'$ ';color:var(--accent)}
-.terminal .out{color:#ddd;padding-left:0}
-.terminal .ok{color:var(--green)}
-.terminal .warn{color:#ffbd2e}
-.terminal .dim{color:#555}
-
-/* === HOW IT WORKS === */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-@media(max-width:768px){.steps{grid-template-columns:1fr}}
-
-.step-card{
-  background:var(--card-grad);border-radius:var(--r-lg);padding:32px;
-  box-shadow:var(--shadow);position:relative;
-  transition:transform .2s,box-shadow .2s;border:1px solid var(--border-soft);
-}
-.step-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-.step-num{
-  position:absolute;top:-12px;left:32px;
-  width:28px;height:28px;background:var(--accent);
-  border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:13px;font-weight:700;color:#fff;
-  box-shadow:0 4px 12px rgba(226,100,60,0.25);
-}
-.step-card h3{font-size:18px;font-weight:700;margin:12px 0 10px;letter-spacing:-0.01em}
-.step-card p{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:20px}
-.step-code{
-  background:var(--bg);border-radius:var(--r-sm);
-  padding:14px 16px;font-family:'JetBrains Mono',monospace;
-  font-size:12px;color:var(--text);border:1px solid var(--border-soft);
-}
-.step-code .prompt{color:var(--accent)}
-
-/* === DEEP DIVE (staggered dark/light) === */
-.deepdive-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:24px;
-  margin-bottom:24px;
-}
-@media(max-width:900px){.deepdive-grid{grid-template-columns:1fr}}
-
-.dd-card{
-  border-radius:var(--r-xl);padding:40px;
-  display:flex;flex-direction:column;
-  min-height:320px;
-}
-.dd-card.dark{
-  background:var(--dark);color:#fff;
-  box-shadow:var(--shadow-dark);
-}
-.dd-card.light{
-  background:var(--card-grad);color:var(--text);
-  box-shadow:var(--shadow-lg);border:1px solid var(--border-soft);
-}
-.dd-card h3{
-  font-family:'Instrument Serif',serif;font-weight:400;
-  font-size:28px;line-height:1.2;margin-bottom:16px;
-  letter-spacing:-0.01em;
-}
-.dd-card.light h3{
-  font-family:'Inter',sans-serif;font-weight:700;
-  font-size:24px;letter-spacing:-0.02em;
-}
-.dd-card p{
-  font-size:15px;line-height:1.5;margin-bottom:auto;
-}
-.dd-card.dark p{color:var(--text-dark-muted)}
-.dd-card.light p{color:var(--text-muted)}
-
-.dd-visual{margin-top:24px}
-.dd-stat-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:12px 0;
-}
-.dd-card.dark .dd-stat-row{border-bottom:1px solid var(--border-dark)}
-.dd-card.light .dd-stat-row{border-bottom:1px solid var(--border-soft)}
-.dd-stat-row:last-child{border-bottom:none}
-.dd-stat-row .dsr-key{font-family:'JetBrains Mono',monospace;font-size:13px}
-.dd-card.dark .dsr-key{color:#fff}
-.dd-card.light .dsr-key{color:var(--text)}
-.dd-stat-row .dsr-val{
-  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
-  display:flex;align-items:center;gap:6px;
-}
-.dd-stat-row .dsr-val::before{
-  content:'';width:8px;height:8px;border-radius:50%;
-}
-.dd-stat-row .dsr-val.ok{color:var(--green)}
-.dd-stat-row .dsr-val.ok::before{background:var(--green)}
-.dd-stat-row .dsr-val.warn{color:var(--yellow)}
-.dd-stat-row .dsr-val.warn::before{background:var(--yellow)}
-.dd-stat-row .dsr-val.bad{color:var(--red)}
-.dd-stat-row .dsr-val.bad::before{background:var(--red)}
-.dd-stat-row .dsr-val.active{color:var(--accent)}
-.dd-stat-row .dsr-val.active::before{background:var(--accent)}
-.dd-stat-row .dsr-val.muted{color:var(--text-muted)}
-.dd-card.dark .dsr-val.muted{color:var(--text-dark-muted)}
-.dd-stat-row .dsr-val.muted::before{background:var(--text-light)}
-
-/* Bar list inside dd card */
-.dd-bar-list{display:flex;flex-direction:column;gap:14px;margin-top:16px}
-.dd-bar-item .dbi-head{
-  display:flex;justify-content:space-between;
-  font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:6px;
-}
-.dd-card.dark .dbi-head{color:#fff}
-.dd-card.light .dbi-head{color:var(--text)}
-.dd-bar-item .dbi-head .dbi-val{color:var(--text-muted)}
-.dd-card.dark .dbi-head .dbi-val{color:var(--text-dark-muted)}
-.dd-bar-item .dbi-bar{height:4px;background:var(--border-soft);border-radius:2px;overflow:hidden}
-.dd-card.dark .dbi-bar{background:#333}
-.dd-bar-item .dbi-fill{height:100%;border-radius:2px;transition:width .8s}
-.dd-bar-item .dbi-fill.high{background:var(--accent)}
-.dd-bar-item .dbi-fill.mid{background:var(--yellow)}
-.dd-bar-item .dbi-fill.low{background:var(--border)}
-
-/* === CTA === */
-.cta-section{padding:80px 0 100px}
-.cta-card{
-  background:var(--dark);border-radius:var(--r-xl);
-  padding:64px 48px;text-align:center;position:relative;overflow:hidden;
-  box-shadow:var(--shadow-dark);
-}
-.cta-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;
-  height:5px;background:var(--accent);
-}
-.cta-card h2{
-  font-size:clamp(32px,4vw,48px);font-weight:800;
-  color:#fff;letter-spacing:-0.03em;line-height:1.1;margin-bottom:16px;
-}
-.cta-card h2 em{
-  font-family:'Instrument Serif',serif;font-style:italic;
-  font-weight:400;color:var(--accent);
-}
-.cta-card p{font-size:17px;color:#999;max-width:480px;margin:0 auto 32px}
-.cta-card .btn-primary{box-shadow:0 12px 32px rgba(226,100,60,0.3)}
-.cta-card .btn-primary:hover{box-shadow:0 16px 40px rgba(226,100,60,0.35)}
-.cta-card .btn-secondary{background:transparent;border:1px solid #333;color:#fff}
-.cta-card .btn-secondary:hover{border-color:#555;background:#1a1a1a}
-
-/* === FOOTER === */
-footer{padding:48px 0 32px;border-top:1px solid var(--border-soft)}
-.footer-grid{
-  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;
-}
-@media(max-width:768px){.footer-grid{grid-template-columns:1fr 1fr;gap:24px}}
-.footer-brand .nav-logo{font-size:22px;display:block;margin-bottom:12px}
-.footer-brand p{font-size:14px;color:var(--text-muted);max-width:280px}
-.footer-col h4{
-  font-size:12px;text-transform:uppercase;letter-spacing:0.08em;
-  font-weight:600;color:var(--text-muted);margin-bottom:16px;
-}
-.footer-col a{
-  display:block;font-size:14px;color:var(--text);
-  text-decoration:none;margin-bottom:10px;transition:color .2s;
-}
-.footer-col a:hover{color:var(--accent)}
-.footer-bottom{
-  padding-top:24px;border-top:1px solid var(--border-soft);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:13px;color:var(--text-muted);
-}
-
-/* === ANIMATIONS === */
-@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.fade{opacity:0}
-.fade.visible{animation:fadeInUp .6s ease forwards}
-
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-inner">
-    <a href="#" class="nav-logo">cairn<span>.</span></a>
-    <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#dashboard">Dashboard</a>
-      <a href="#how">How it works</a>
-      <a href="https://github.com/valtors/cairn">GitHub</a>
-    </div>
-    <a href="https://github.com/valtors/cairn" class="nav-cta">Star</a>
-  </div>
+<div class="wrap">
+<div class="nav-left">
+<div class="nav-brand">cairn</div>
+<ul class="nav-links">
+<li><a href="#how">how it works</a></li>
+<li><a href="#features">features</a></li>
+<li><a href="#install">install</a></li>
+<li><a href="https://github.com/valtors/cairn">github</a></li>
+</ul>
+</div>
+<div class="nav-right">
+<a href="https://github.com/valtors/cairn" class="btn-star">
+<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 5.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
+star on github
+</a>
+</div>
+</div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
-  <div class="container">
-    <div class="hero-content fade">
-      <div class="hero-tag">Agent Memory Library</div>
-      <h1>your agent forgot <em>everything</em></h1>
-      <p>cairn gives agents persistent memory. not vector embeddings, not chunks of text. facts with confidence scores, timestamps, and decay. one sqlite file.</p>
-      <div class="hero-actions">
-        <a href="https://github.com/valtors/cairn" class="btn-primary">Install cairn</a>
-        <a href="#how" class="btn-secondary">View Docs</a>
-      </div>
-    </div>
-
-    <!-- STAGGERED CARD SHOWCASE -->
-    <div class="showcase fade" style="animation-delay:.15s">
-      <!-- LEFT: Dark tall card with file list -->
-      <div class="showcase-dark">
-        <h2>Memory that<br>actually <em style="font-family:'Instrument Serif',serif;font-style:italic;color:var(--accent)">persists</em></h2>
-        <p>every fact your agent learns. stored with timestamps, confidence, and graph links. nothing forgotten, nothing lost.</p>
-        <div class="file-list">
-          <div class="file-list-head">Stored Facts</div>
-          <div class="file-item">
-            <div class="fi-left">
-              <div class="fi-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              </div>
-              <span class="fi-name">pref:dark-mode</span>
-            </div>
-            <span class="fi-action">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </span>
-          </div>
-          <div class="file-item">
-            <div class="fi-left">
-              <div class="fi-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              </div>
-              <span class="fi-name">editor:vim<span class="fi-badge">AI</span></span>
-            </div>
-            <span class="fi-action">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </span>
-          </div>
-          <div class="file-item">
-            <div class="fi-left">
-              <div class="fi-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              </div>
-              <span class="fi-name">os:linux</span>
-            </div>
-            <span class="fi-action">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </span>
-          </div>
-          <div class="file-item">
-            <div class="fi-left">
-              <div class="fi-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              </div>
-              <span class="fi-name">framework:react</span>
-            </div>
-            <span class="fi-action">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </span>
-          </div>
-          <div class="file-item">
-            <div class="fi-left">
-              <div class="fi-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              </div>
-              <span class="fi-name">theme:dark</span>
-            </div>
-            <span class="fi-action">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </span>
-          </div>
-        </div>
-        <a href="#" class="btn-light">Learn more</a>
-      </div>
-
-      <!-- MIDDLE: Light card with doc grid -->
-      <div class="showcase-light">
-        <h2>Aligned with your<br>agent workflow</h2>
-        <p>effortlessly store and recall facts with simple CLI commands. no json, no api keys, no cloud.</p>
-        <div class="doc-grid">
-          <div class="doc-item active">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              <span class="ai-badge">AI</span>
-            </div>
-            <div class="di-name">remember</div>
-          </div>
-          <div class="doc-item">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            </div>
-            <div class="di-name">recall</div>
-          </div>
-          <div class="doc-item">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span class="ai-badge">AI</span>
-            </div>
-            <div class="di-name">forget</div>
-          </div>
-          <div class="doc-item">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.5 7.5L11 16M15.5 7.5L13 16"/></svg>
-            </div>
-            <div class="di-name">graph</div>
-          </div>
-          <div class="doc-item">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
-            </div>
-            <div class="di-name">init</div>
-          </div>
-          <div class="doc-item">
-            <div class="di-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
-            </div>
-            <div class="di-name">config</div>
-          </div>
-        </div>
-        <a href="#" class="btn-dark">Read the docs</a>
-      </div>
-
-      <!-- RIGHT: Split card (dark top / light bottom) -->
-      <div class="showcase-split">
-        <div class="split-top">
-          <h2>Zero-LLM<br>extraction</h2>
-          <p>facts are parsed, not generated. regex and keyword extraction. zero api calls, zero tokens spent.</p>
-          <div class="info-box">
-            cost per fact: $0.00. extraction time: 0ms. no external dependencies.
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-            <span style="font-size:13px;color:var(--text-dark-muted)">Download</span>
-            <span style="background:#1a1a1a;padding:4px 12px;border-radius:var(--r-pill);font-size:12px;color:#fff;font-weight:600">4 commands</span>
-          </div>
-          <a href="#" class="btn-light">Get started</a>
-        </div>
-        <div class="split-bottom">
-          <p>every fact tracks when it became true and when it was stored. query the past, not just the present.</p>
-          <a href="#" class="btn-dark">Explore timeline</a>
-          <div class="split-file-list">
-            <div class="split-file-head">312 Stored Facts</div>
-            <div class="split-file-item">
-              <div class="sfi-left">
-                <div class="sfi-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                </div>
-                <span class="sfi-name">pref:dark-mode</span>
-              </div>
-              <span class="sfi-dl">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              </span>
-            </div>
-            <div class="split-file-item">
-              <div class="sfi-left">
-                <div class="sfi-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                </div>
-                <span class="sfi-name">editor:vim</span>
-              </div>
-              <span class="sfi-dl">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              </span>
-            </div>
-            <div class="split-file-item">
-              <div class="sfi-left">
-                <div class="sfi-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                </div>
-                <span class="sfi-name">os:linux</span>
-              </div>
-              <span class="sfi-dl">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="wrap">
+<div class="hero-left">
+<div class="hero-eyebrow">agent wayfinding / open source / MIT</div>
+<h1>your agent <em>remembers.</em></h1>
+<p class="hero-sub">cairn gives agents persistent memory, not vector embeddings.</p>
+<p class="hero-tag">real facts with confidence scores, timestamps, and decay.</p>
+<div class="cta-group">
+<button class="btn-primary">$ cargo install cairn</button>
+<a href="https://github.com/valtors/cairn" class="btn-secondary">view docs &rarr;</a>
+</div>
+<p class="hero-badge">open source <span>/</span> MIT <span>/</span> one sqlite file</p>
+</div>
+<div class="hero-right">
+<div class="illustration">
+<svg viewBox="0 0 380 320" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<filter id="rough">
+<feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="3"/>
+<feDisplacementMap in="SourceGraphic" scale="1.8"/>
+</filter>
+</defs>
+<g filter="url(#rough)" fill="none" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+<line x1="20" y1="292" x2="360" y2="292" stroke-width="1" opacity=".25"/>
+<line x1="80" y1="242" x2="320" y2="242" stroke-width="2"/>
+<line x1="85" y1="242" x2="85" y2="292" stroke-width="1.5"/>
+<line x1="315" y1="242" x2="315" y2="292" stroke-width="1.5"/>
+<path d="M150,135 L150,222 L282,222 L282,135 Z" stroke-width="1.5"/>
+<path d="M160,145 L160,212 L272,212 L272,145 Z" stroke-width="1" fill="#f7f7f7"/>
+<line x1="168" y1="153" x2="255" y2="153" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="161" x2="240" y2="161" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="169" x2="252" y2="169" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="177" x2="230" y2="177" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="185" x2="245" y2="185" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="193" x2="225" y2="193" stroke-width=".8" opacity=".35"/>
+<line x1="168" y1="201" x2="238" y2="201" stroke-width=".8" opacity=".35"/>
+<line x1="160" y1="128" x2="175" y2="128" stroke-width=".8"/>
+<line x1="180" y1="128" x2="195" y2="128" stroke-width=".8"/>
+<line x1="200" y1="128" x2="215" y2="128" stroke-width=".8"/>
+<path d="M198,222 L198,238 L232,238 L232,222" stroke-width="1.5"/>
+<line x1="193" y1="242" x2="237" y2="242" stroke-width="2"/>
+<rect x="290" y="217" width="26" height="25" stroke-width="1.2"/>
+<rect x="153" y="234" width="50" height="6" rx="1" stroke-width="1"/>
+<path d="M58,252 L58,165 Q58,155 68,155 L76,155" stroke-width="1.5"/>
+<line x1="58" y1="252" x2="112" y2="252" stroke-width="1.5"/>
+<line x1="63" y1="252" x2="63" y2="292" stroke-width="1.2"/>
+<ellipse cx="96" cy="182" rx="16" ry="18" stroke-width="1.5"/>
+<path d="M80,177 Q82,162 96,164 Q109,166 112,177" stroke-width="1.5"/>
+<path d="M79,180 Q76,172 78,167" stroke-width="1"/>
+<path d="M109,182 Q113,184 111,190" stroke-width="1"/>
+<line x1="96" y1="200" x2="96" y2="210" stroke-width="1.2"/>
+<path d="M96,210 Q89,217 83,232 Q81,242 83,252" stroke-width="1.5"/>
+<path d="M96,210 Q103,217 109,232 Q111,242 109,252" stroke-width="1.5"/>
+<path d="M101,217 Q116,227 131,234 L156,237" stroke-width="1.5"/>
+<path d="M156,237 Q159,235 161,237" stroke-width="1.2"/>
+<path d="M308,256 L303,276 L335,276 L330,256 Z" stroke-width="1.5"/>
+<line x1="306" y1="256" x2="332" y2="256" stroke-width="1.5"/>
+<line x1="309" y1="259" x2="329" y2="259" stroke-width=".8" opacity=".35"/>
+<path d="M320,256 Q318,240 314,224" stroke-width="1.2"/>
+<path d="M320,256 Q323,236 327,220" stroke-width="1.2"/>
+<path d="M320,256 Q320,230 318,214" stroke-width="1.2"/>
+<ellipse cx="313" cy="221" rx="6" ry="3" transform="rotate(-30 313 221)" stroke-width="1"/>
+<ellipse cx="328" cy="218" rx="6" ry="3" transform="rotate(30 328 218)" stroke-width="1"/>
+<ellipse cx="318" cy="211" rx="5" ry="3" transform="rotate(-10 318 211)" stroke-width="1"/>
+<path d="M118,232 L118,244 Q118,247 121,247 L132,247 Q135,247 135,244 L135,232 Z" stroke-width="1.2"/>
+<path d="M135,234 Q141,234 141,238 Q141,242 135,240" stroke-width="1"/>
+<path d="M124,228 Q122,222 125,218 Q128,214 126,210" stroke-width=".8" opacity=".5"/>
+<path d="M129,228 Q127,222 130,218 Q133,214 131,210" stroke-width=".8" opacity=".5"/>
+</g>
+<text x="293" y="232" font-family="'JetBrains Mono',monospace" font-size="6.5" fill="#1a1a1a">cairn</text>
+</svg>
+</div>
+<div class="terminal">
+<div class="terminal-bar">
+<span class="term-dot"></span>
+<span class="term-dot"></span>
+<span class="term-dot"></span>
+<span class="term-title">cairn --stdio</span>
+</div>
+<div class="terminal-body">
+<div class="term-line"><span class="term-prompt">$</span>cairn remember "david prefers short updates in the morning"</div>
+<div class="term-out">&gt; stored. fact: 71838f5f</div>
+<div class="term-line"><span class="term-prompt">$</span>cairn recall "david preferences"</div>
+<div class="term-out">&gt; 3 facts found (0.32ms)</div>
+<div class="term-line"><span class="term-prompt">$</span><span class="term-cursor"></span></div>
+</div>
+</div>
+</div>
+</div>
 </section>
 
-<!-- METRICS -->
-<section class="metrics">
-  <div class="container">
-    <div class="metrics-grid">
-      <div class="metric"><div class="metric-val"><span>0.3</span>ms</div><div class="metric-lbl">avg recall speed</div></div>
-      <div class="metric"><div class="metric-val"><span>12K</span>+</div><div class="metric-lbl">lookups served</div></div>
-      <div class="metric"><div class="metric-val"><span>312</span></div><div class="metric-lbl">facts stored</div></div>
-      <div class="metric"><div class="metric-val"><span>4</span></div><div class="metric-lbl">commands total</div></div>
-    </div>
-  </div>
+<section class="built-bar">
+<div class="wrap">
+<span class="label">built with</span>
+<div class="items">
+<span class="item">Rust</span>
+<span class="item">SQLite</span>
+<span class="item">MCP</span>
+<span class="item">zero LLM</span>
+<span class="item">one binary</span>
+</div>
+</div>
 </section>
 
-<!-- FEATURES -->
-<section class="section" id="features">
-  <div class="container">
-    <div class="section-head">
-      <h2>memory that works like <em>memory</em></h2>
-      <p>not a vector db. not a json blob. facts with temporal decay, graph links, and zero-llm extraction.</p>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon orange">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        </div>
-        <h3>Bi-temporal storage</h3>
-        <p>every fact knows when it was stored and when it was last accessed. old facts decay. recent facts stay sharp. no manual cleanup.</p>
-        <span class="feature-tag mono">stored_at + accessed_at</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon green">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.5 7.5L11 16M15.5 7.5L13 16"/></svg>
-        </div>
-        <h3>Graph traversal</h3>
-        <p>facts link to other facts. recall follows the graph. "user prefers vim" connects to "user is a developer" connects to "user works on rust."</p>
-        <span class="feature-tag mono">fact -> fact edges</span>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon dark">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
-        </div>
-        <h3>Zero config</h3>
-        <p>one sqlite file. no server. no api keys. no docker. no embeddings model. cairn init and you have agent memory.</p>
-        <span class="feature-tag mono">sqlite. that's it.</span>
-      </div>
-    </div>
-  </div>
+<section class="dashboard">
+<div class="wrap">
+<div class="card">
+<div class="card-header">
+<span class="card-title">MEMORY OVERVIEW</span>
+<span class="live-dot">live</span>
+</div>
+<div class="metrics-grid">
+<div class="metric">
+<span class="metric-label">FACTS RECALLED</span>
+<span class="metric-value" data-count="312">312</span>
+<span class="metric-delta">+12.5% this week</span>
+</div>
+<div class="metric">
+<span class="metric-label">AVG READ SPEED</span>
+<span class="metric-value">0.3<span style="font-size:18px;color:var(--g400)">ms</span></span>
+<span class="metric-delta">sqlite indexed</span>
+</div>
+<div class="metric">
+<span class="metric-label">FACTS STORED</span>
+<span class="metric-value" data-count="1247">12<span style="font-size:18px;color:var(--g400)">K+</span></span>
+<span class="metric-delta">across 4 agents</span>
+</div>
+<div class="metric">
+<span class="metric-label">INTEGRATIONS</span>
+<span class="metric-value">4</span>
+<span class="metric-delta">mcp / stdio / http / cli</span>
+</div>
+</div>
+<div class="bar-chart">
+<div class="bar" style="height:35%"></div>
+<div class="bar" style="height:55%"></div>
+<div class="bar" style="height:28%"></div>
+<div class="bar" style="height:72%"></div>
+<div class="bar active" style="height:45%"></div>
+<div class="bar" style="height:88%"></div>
+<div class="bar" style="height:60%"></div>
+<div class="bar" style="height:38%"></div>
+<div class="bar" style="height:52%"></div>
+<div class="bar" style="height:78%"></div>
+<div class="bar" style="height:42%"></div>
+<div class="bar" style="height:65%"></div>
+<div class="bar" style="height:30%"></div>
+<div class="bar" style="height:82%"></div>
+<div class="bar" style="height:48%"></div>
+<div class="bar" style="height:58%"></div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<span class="card-title">RECENT FACTS</span>
+<a href="#" class="card-link">view all &rarr;</a>
+</div>
+<ul class="fact-list">
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>david prefers short updates in the morning</span>
+<span class="fact-time">1m ago</span>
+</li>
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>using postgres for analytics events</span>
+<span class="fact-time">4m ago</span>
+</li>
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>dev meeting on dec 10 at 10:00 am</span>
+<span class="fact-time">1h ago</span>
+</li>
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>api rate limit increased to 1000 rpm</span>
+<span class="fact-time">3h ago</span>
+</li>
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>customer onboarding flow v2 finalized</span>
+<span class="fact-time">5h ago</span>
+</li>
+<li class="fact-item">
+<span class="fact-text"><span class="fact-dot"></span>migrated from vim to neovim</span>
+<span class="fact-time">8h ago</span>
+</li>
+</ul>
+</div>
+</div>
 </section>
 
-<!-- DEEP DIVE: staggered dark/light cards -->
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <h2>not chunks. <em>facts.</em></h2>
-      <p>vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire.</p>
-    </div>
-    <div class="deepdive-grid">
-      <!-- Dark card: timeline -->
-      <div class="dd-card dark">
-        <h3>Facts have <em style="color:var(--accent)">history</em></h3>
-        <p>every fact tracks when it became true and when it was stored. contradicting facts coexist with timestamps. query the past.</p>
-        <div class="dd-visual">
-          <div class="dd-stat-row"><span class="dsr-key">os: linux</span><span class="dsr-val ok">active now</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">os: macos</span><span class="dsr-val muted">closed 03-15</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">editor: vim</span><span class="dsr-val ok">active 2h ago</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">theme: dark</span><span class="dsr-val active">active 3h ago</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">theme: light</span><span class="dsr-val muted">closed 01-20</span></div>
-        </div>
-      </div>
-      <!-- Light card: decay bars -->
-      <div class="dd-card light">
-        <h3>Stale facts fade</h3>
-        <p>confidence decays over time. agents forget what no longer matters, so the signal stays clean. no manual cleanup.</p>
-        <div class="dd-visual">
-          <div class="dd-bar-list">
-            <div class="dd-bar-item">
-              <div class="dbi-head"><span class="dbi-label">pref: react</span><span class="dbi-val">conf 0.91</span></div>
-              <div class="dbi-bar"><div class="dbi-fill high" style="width:91%"></div></div>
-            </div>
-            <div class="dd-bar-item">
-              <div class="dbi-head"><span class="dbi-label">pref: angular</span><span class="dbi-val">conf 0.12</span></div>
-              <div class="dbi-bar"><div class="dbi-fill low" style="width:12%"></div></div>
-            </div>
-            <div class="dd-bar-item">
-              <div class="dbi-head"><span class="dbi-label">pref: svelte</span><span class="dbi-val">conf 0.08</span></div>
-              <div class="dbi-bar"><div class="dbi-fill low" style="width:8%"></div></div>
-            </div>
-            <div class="dd-bar-item">
-              <div class="dbi-head"><span class="dbi-label">pref: vue</span><span class="dbi-val">conf 0.03</span></div>
-              <div class="dbi-bar"><div class="dbi-fill low" style="width:3%"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="deepdive-grid">
-      <!-- Light card: extraction stats -->
-      <div class="dd-card light">
-        <h3>Zero-LLM extraction</h3>
-        <p>keyword extraction and regex patterns. no api calls, no tokens spent. facts are parsed, not generated.</p>
-        <div class="dd-visual">
-          <div class="dd-stat-row"><span class="dsr-key">extract: regex</span><span class="dsr-val ok">0ms $0.00</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">extract: keyword</span><span class="dsr-val ok">0ms $0.00</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">extract: llm call</span><span class="dsr-val muted">n/a</span></div>
-          <div class="dd-stat-row"><span class="dsr-key">cost per fact</span><span class="dsr-val ok">$0.00</span></div>
-        </div>
-      </div>
-      <!-- Dark card: memory health with donut -->
-      <div class="dd-card dark">
-        <h3>Memory <em style="color:var(--accent)">health</em></h3>
-        <p>watch your agent's memory in real time. active facts, decaying facts, confidence scores. all from one sqlite file.</p>
-        <div class="dd-visual" style="display:flex;align-items:center;gap:24px">
-          <div class="donut-wrap">
-            <svg class="donut" width="72" height="72" viewBox="0 0 80 80">
-              <circle class="donut-track" cx="40" cy="40" r="36" style="stroke:#333"/>
-              <circle class="donut-fill" cx="40" cy="40" r="36" id="dd-donut"/>
-            </svg>
-            <div class="donut-text" style="color:#fff">79%</div>
-          </div>
-          <div style="flex:1">
-            <div class="dd-stat-row"><span class="dsr-key">total</span><span class="dsr-val" style="color:#fff">312</span></div>
-            <div class="dd-stat-row"><span class="dsr-key">active</span><span class="dsr-val ok">247</span></div>
-            <div class="dd-stat-row"><span class="dsr-key">decaying</span><span class="dsr-val warn">65</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<section class="concept" id="how">
+<div class="wrap">
+<div class="section-head">
+<h2>memory that works like <em>memory</em></h2>
+<p>cairn stores facts the way your brain does. with context, confidence, and decay.</p>
+</div>
+<div class="feature-row">
+<div class="feature-box">
+<div class="feature-num">01 / temporal</div>
+<div class="feature-title">bi-temporal storage</div>
+<div class="feature-desc">store facts with valid time and system time. query what was true on any date. history isn't erased, it's superseded.</div>
+<span class="feature-tag">valid time + system time</span>
+</div>
+<div class="feature-box">
+<div class="feature-num">02 / graph</div>
+<div class="feature-title">graph traversal</div>
+<div class="feature-desc">connect facts and traverse relationships. keywords find entry points, graph walks the subgraph. no cypher, no sparql.</div>
+<span class="feature-tag">subject / predicate / object</span>
+</div>
+<div class="feature-box">
+<div class="feature-num">03 / config</div>
+<div class="feature-title">zero-config</div>
+<div class="feature-desc">one line, no servers. no setup. just memory. copy the file, you've copied the memory. that's the whole backup.</div>
+<span class="feature-tag dark">$ cargo install cairn</span>
+</div>
+</div>
+<div class="concept-statement">
+<div class="line1">not chunks. <em>facts.</em></div>
+<div class="line2">cairn doesn't guess. it remembers what's true.</div>
+</div>
+</div>
 </section>
 
-<!-- DASHBOARD PREVIEW -->
-<section class="section" id="dashboard">
-  <div class="container">
-    <div class="section-head">
-      <h2>see your agent's <em>memory</em></h2>
-      <p>cairn ships with a built-in dashboard. watch facts flow in, decay over time, and link together in real time.</p>
-    </div>
-  </div>
-  <div style="padding:0 32px">
-    <div class="dashboard-wrap">
-      <div class="dash-head">
-        <div>
-          <div class="dash-title">Memory Overview</div>
-          <div class="dash-subtitle">session: production-agent-01</div>
-        </div>
-        <div class="dash-live">Live</div>
-      </div>
-      <div class="dash-grid">
-        <div class="dash-card">
-          <div class="dash-card-label">Active Facts</div>
-          <div class="dash-card-val accent">247</div>
-          <div class="dash-card-desc">above 0.5 confidence</div>
-          <div class="dash-card-chart">
-            <div class="mini-bars" id="bars1"></div>
-          </div>
-        </div>
-        <div class="dash-card">
-          <div class="dash-card-label">Recall Latency</div>
-          <div class="dash-card-val">0.3ms</div>
-          <div class="dash-card-desc">p99 across 12k lookups</div>
-          <div class="dash-card-chart">
-            <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%;height:60px">
-              <polyline points="0,40 25,35 50,30 75,25 100,22 125,18 150,15 175,12 200,10" fill="none" stroke="#e2643c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="0,40 25,35 50,30 75,25 100,22 125,18 150,15 175,12 200,10 200,60 0,60" fill="url(#grad1)" opacity="0.1"/>
-              <defs><linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2643c"/><stop offset="100%" stop-color="#e2643c" stop-opacity="0"/></linearGradient></defs>
-            </svg>
-          </div>
-        </div>
-        <div class="dash-card">
-          <div class="dash-card-label">Decay Rate</div>
-          <div class="dash-card-val">0.03<span style="font-size:18px">/s</span></div>
-          <div class="dash-card-desc">exponential, half-life 24h</div>
-          <div class="dash-card-chart">
-            <div class="seg-bar" id="segBar2"></div>
-          </div>
-        </div>
-      </div>
-      <div class="terminal">
-        <div class="terminal-head">
-          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-          <div class="title">cairn cli</div>
-        </div>
-        <div class="cmd">cairn init</div>
-        <div class="out">created memory.db</div>
-        <div class="cmd">cairn remember "user prefers dark mode"</div>
-        <div class="out">stored: <span class="ok">pref:dark-mode (conf: 1.00)</span></div>
-        <div class="cmd">cairn recall "what theme does the user like?"</div>
-        <div class="out">dark <span class="dim">(conf: 0.92, 2h ago)</span></div>
-        <div class="out">dark-mode <span class="dim">(conf: 1.00, 3h ago)</span></div>
-        <div class="cmd">cairn forget --stale</div>
-        <div class="out">pruning 4 facts below threshold</div>
-        <div class="out">pruned: <span class="warn">framework:angular (0.03)</span></div>
-        <div class="out">pruned: <span class="warn">editor:emacs (0.01)</span></div>
-        <div class="out">pruned: <span class="warn">os:macos (0.00)</span></div>
-        <div class="dim"># no llm calls. no tokens spent. no api keys.</div>
-      </div>
-    </div>
-  </div>
+<section class="mechanism" id="features">
+<div class="wrap">
+<div class="mech-row">
+<div class="mech-box">
+<div class="mech-title">FACTS HAVE HISTORY</div>
+<div class="mech-visual">
+<svg viewBox="0 0 200 80" width="180" height="70">
+<g fill="none" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+<line x1="20" y1="60" x2="180" y2="60"/>
+<circle cx="40" cy="60" r="4" fill="#fff"/>
+<circle cx="80" cy="60" r="4" fill="#1a1a1a"/>
+<circle cx="120" cy="60" r="4" fill="#1a1a1a"/>
+<circle cx="160" cy="60" r="4" fill="#fff"/>
+<text x="30" y="40" font-family="'JetBrains Mono',monospace" font-size="8" fill="#707070">jul 15</text>
+<text x="70" y="40" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a1a" font-weight="700">jul 20</text>
+<text x="110" y="40" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a1a" font-weight="700">jul 22</text>
+<text x="150" y="40" font-family="'JetBrains Mono',monospace" font-size="8" fill="#707070">jul 25</text>
+<text x="20" y="76" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">postgres</text>
+<text x="70" y="76" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">switched</text>
+<text x="112" y="76" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">neovim</text>
+<text x="148" y="76" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">closed</text>
+</g>
+</svg>
+</div>
+<div class="mech-foot">time leads to truth</div>
+</div>
+<div class="mech-box">
+<div class="mech-title">STATE FACTS FADE</div>
+<div class="mech-visual">
+<svg viewBox="0 0 200 80" width="180" height="70">
+<g fill="none" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+<path d="M20,20 Q60,22 100,35 Q140,55 180,65" stroke-width="2"/>
+<line x1="20" y1="70" x2="180" y2="70" stroke-width=".8" opacity=".3"/>
+<line x1="20" y1="20" x2="20" y2="70" stroke-width=".8" opacity=".3"/>
+<text x="2" y="24" font-family="'JetBrains Mono',monospace" font-size="7" fill="#707070">1.0</text>
+<text x="2" y="72" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">0.0</text>
+<text x="170" y="76" font-family="'JetBrains Mono',monospace" font-size="7" fill="#a0a0a0">time</text>
+<circle cx="100" cy="35" r="3" fill="#1a1a1a"/>
+<text x="80" y="52" font-family="'JetBrains Mono',monospace" font-size="7" fill="#707070">0.6 conf</text>
+</g>
+</svg>
+</div>
+<div class="mech-foot">confidence decays, facts don't delete</div>
+</div>
+<div class="mech-box">
+<div class="mech-title">ZERO-LLM EXTRACTION</div>
+<div class="mech-visual">
+<div style="background:#0a0a0a;color:#fff;padding:10px 14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.6;text-align:left">
+{"plan":"pro",<br>&nbsp;"team":"juice devs",<br>&nbsp;"email":"damir@juice.com"}
+</div>
+</div>
+<div class="mech-foot">like milk. but. smart.</div>
+</div>
+</div>
+<div class="mech-bottom">
+<div class="big">three commands. <em>that's it.</em></div>
+<div class="small">no config files. no json editing. no api keys. remember, recall, forget.</div>
+</div>
+</div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section class="section" id="how">
-  <div class="container">
-    <div class="section-head">
-      <h2>three commands. <em>that's it.</em></h2>
-      <p>no config files. no json editing. no api keys. remember, recall, forget.</p>
-    </div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <h3>Remember</h3>
-        <p>store any fact with a confidence score. cairn extracts the key automatically. no llm needed.</p>
-        <div class="step-code"><span class="prompt">$</span> cairn remember "user likes vim"</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <h3>Recall</h3>
-        <p>query by meaning, not exact match. cairn finds the closest facts and ranks by confidence and recency.</p>
-        <div class="step-code"><span class="prompt">$</span> cairn recall "text editor pref"</div>
-      </div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <h3>Forget</h3>
-        <p>prune stale facts that dropped below threshold. or forget a specific key. memory stays clean.</p>
-        <div class="step-code"><span class="prompt">$</span> cairn forget --stale</div>
-      </div>
-    </div>
-  </div>
+<section class="commands" id="install">
+<div class="wrap">
+<div class="cmd-row">
+<div class="cmd-box">
+<div class="cmd-num">1</div>
+<div class="cmd-title">remember</div>
+<div class="cmd-desc">save a fact to memory. the agent calls this as an mcp tool. no extra inference, no extra cost.</div>
+<div class="cmd-code">$ cairn remember "fact"</div>
+</div>
+<div class="cmd-box">
+<div class="cmd-num">2</div>
+<div class="cmd-title">recall</div>
+<div class="cmd-desc">find facts in memory. keywords find entry points, graph traversal walks the subgraph, ranking by confidence and recency.</div>
+<div class="cmd-code">$ cairn recall "query"</div>
+</div>
+<div class="cmd-box">
+<div class="cmd-num">3</div>
+<div class="cmd-title">forget</div>
+<div class="cmd-desc">remove a fact. or let it decay. low-confidence facts get tombstoned. user-stated facts never auto-forget.</div>
+<div class="cmd-code">$ cairn forget "fact"</div>
+</div>
+</div>
+</div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section">
-  <div class="container">
-    <div class="cta-card">
-      <h2>agents leave cairns to mark what they <em>learned</em></h2>
-      <p>stop building agents that forget everything at session end. give them memory that persists.</p>
-      <div class="hero-actions" style="justify-content:center">
-        <a href="https://github.com/valtors/cairn" class="btn-primary">Star on GitHub</a>
-        <a href="https://github.com/valtors/cairn#readme" class="btn-secondary">Read Docs</a>
-      </div>
-    </div>
-  </div>
+<section class="cta-bar">
+<div class="wrap">
+<div class="cta-text">stop building agents that <em>forget.</em> give them memory.</div>
+<div class="cta-btns">
+<button class="cta-dark">$ cargo install cairn</button>
+<a href="https://github.com/valtors/cairn" class="cta-light">read docs &rarr;</a>
+</div>
+</div>
 </section>
 
-<!-- FOOTER -->
 <footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a href="#" class="nav-logo">cairn<span>.</span></a>
-        <p>agent memory that actually works. one sqlite file. zero llm calls. rust + go.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <a href="#features">Features</a>
-        <a href="#dashboard">Dashboard</a>
-        <a href="#how">How it works</a>
-      </div>
-      <div class="footer-col">
-        <h4>Resources</h4>
-        <a href="https://github.com/valtors/cairn">GitHub</a>
-        <a href="https://github.com/valtors/cairn#readme">Docs</a>
-        <a href="https://github.com/valtors/cairn/issues">Issues</a>
-        <a href="https://github.com/valtors/cairn/releases">Releases</a>
-      </div>
-      <div class="footer-col">
-        <h4>Community</h4>
-        <a href="https://github.com/valtors/cairn/fork">Fork</a>
-        <a href="https://github.com/valtors/cairn#contributing">Contribute</a>
-        <a href="https://github.com/valtors/cairn/discussions">Discussions</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>MIT License. Valtors.</span>
-      <span>built with rust + go. no llms harmed.</span>
-    </div>
-  </div>
+<div class="wrap">
+<div>
+<div class="foot-brand">cairn</div>
+<p class="foot-tag">the system of record for ai agents. open source, built for builders.</p>
+</div>
+<div class="foot-col">
+<h4>PRODUCT</h4>
+<ul>
+<li><a href="#how">how it works</a></li>
+<li><a href="#features">features</a></li>
+<li><a href="#install">install</a></li>
+<li><a href="https://github.com/valtors/cairn/blob/main/SPEC.md">spec</a></li>
+</ul>
+</div>
+<div class="foot-col">
+<h4>RESOURCES</h4>
+<ul>
+<li><a href="https://github.com/valtors/cairn">github</a></li>
+<li><a href="https://github.com/valtors/cairn/blob/main/SPEC.md">docs</a></li>
+<li><a href="https://github.com/valtors/cairn/releases">changelog</a></li>
+<li><a href="https://github.com/valtors/cairn/issues">community</a></li>
+</ul>
+</div>
+<div class="foot-col">
+<h4>VALTORS</h4>
+<ul>
+<li><a href="https://github.com/valtors">github</a></li>
+<li><a href="https://valtors.github.io">projects</a></li>
+<li><a href="https://github.com/valtors/smith">smith</a></li>
+<li><a href="https://github.com/valtors/cairn/blob/main/LICENSE">license</a></li>
+</ul>
+</div>
+</div>
+<div class="foot-bottom">
+<p>built with care by valtors. MIT license.</p>
+<p>2026 valtors. all rights reserved.</p>
+</div>
 </footer>
 
 <script>
-// donut 79%
-(function(){
-  const d=document.getElementById('dd-donut');
-  if(!d)return;
-  const circ=2*Math.PI*36;
-  d.style.strokeDashoffset=circ*(1-0.79);
-})();
-
-// segmented bars
-function makeSegBar(id,total,activePct,greenPct){
-  const c=document.getElementById(id);
-  if(!c)return;
-  for(let i=0;i<total;i++){
-    const s=document.createElement('div');
-    s.className='seg';
-    if(i<activePct)s.classList.add('active');
-    if(i>=activePct&&i<activePct+greenPct)s.classList.add('green');
-    c.appendChild(s);
-  }
-}
-makeSegBar('segBar2',32,24,3);
-
-// mini bars
-(function(){
-  const c=document.getElementById('bars1');
-  if(!c)return;
-  const vals=[0.3,0.5,0.4,0.7,0.6,0.8,0.5,0.9,0.7,1,0.8,0.6];
-  vals.forEach(v=>{
-    const b=document.createElement('div');
-    b.className='mb';
-    if(v>0.75)b.classList.add('h');
-    else if(v>0.4)b.classList.add('m');
-    else b.classList.add('l');
-    b.style.height=(v*100)+'%';
-    c.appendChild(b);
-  });
-})();
-
-// fade in on scroll
-const io=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting)e.target.classList.add('visible');
-  });
-},{threshold:0.1});
-document.querySelectorAll('.fade').forEach(el=>io.observe(el));
+document.querySelectorAll('[data-count]').forEach(function(el){
+var target=parseInt(el.getAttribute('data-count'));
+var prefix=el.textContent.replace(/[0-9]/g,'').trim();
+var suffix='';
+if(el.querySelector('span')){suffix=el.querySelector('span').outerHTML}
+var current=0;
+var step=target/40;
+var timer=setInterval(function(){
+current+=step;
+if(current>=target){current=target;clearInterval(timer)}
+el.innerHTML=Math.floor(current)+suffix;
+},25);
+});
 </script>
 </body>
 </html>
