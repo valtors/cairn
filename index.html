@@ -7,7 +7,7 @@
 <meta name="description" content="agent wayfinding. persistent memory for ai agents. one sqlite file. zero llm calls.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <style>
@@ -15,16 +15,19 @@
 :root{
 --bg:#f4f1ea;
 --bg2:#ede9e0;
+--bg3:#e8e3d6;
 --text:#1a1a1a;
---muted:#9a958a;
+--muted:#8a857a;
 --subtle:#c4bfb3;
 --accent:#2d5a3e;
+--accent2:#3a6b5e;
 --accent-light:#e8f0eb;
 --surface:#ffffff;
---line:#e0dccf;
+--line:#ddd8cc;
 --line-soft:#ece9e0;
 --green:#5a8a6e;
 --warm:#e8dcc8;
+--amber:#c4956a;
 --shadow-sm:0 1px 2px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.03);
 --shadow-md:0 4px 12px rgba(0,0,0,0.05),0 2px 4px rgba(0,0,0,0.03),0 8px 24px rgba(0,0,0,0.04);
 --shadow-lg:0 8px 32px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.03),0 24px 64px rgba(0,0,0,0.05);
@@ -32,37 +35,46 @@
 }
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;font-weight:400;font-feature-settings:'cv02','cv03','cv04','cv11';}
+
 .painterly{position:fixed;inset:0;z-index:0;pointer-events:none;
 background:
-radial-gradient(ellipse 90% 60% at 15% 5%,rgba(45,90,62,0.07),transparent 70%),
-radial-gradient(ellipse 70% 50% at 85% 25%,rgba(200,170,120,0.09),transparent 70%),
-radial-gradient(ellipse 80% 70% at 50% 75%,rgba(90,138,110,0.05),transparent 70%),
-radial-gradient(ellipse 60% 50% at 95% 55%,rgba(180,150,100,0.07),transparent 70%),
+radial-gradient(ellipse 90% 50% at 20% 0%,rgba(45,90,62,0.08),transparent 60%),
+radial-gradient(ellipse 70% 40% at 80% 10%,rgba(200,170,120,0.1),transparent 60%),
+radial-gradient(ellipse 80% 60% at 50% 70%,rgba(90,138,110,0.05),transparent 70%),
+radial-gradient(ellipse 60% 50% at 95% 50%,rgba(180,150,100,0.06),transparent 70%),
 radial-gradient(ellipse 50% 40% at 10% 90%,rgba(45,90,62,0.04),transparent 70%);
 }
-.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.4;mix-blend-mode:multiply;
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.35;mix-blend-mode:multiply;
 background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
 }
 .content{position:relative;z-index:2;}
 
+/* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(244,241,234,0.72);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border-bottom:1px solid var(--line-soft);}
 nav .logo{font-weight:600;font-size:17px;letter-spacing:-0.3px;display:flex;align-items:center;gap:10px;}
 nav .logo .mark{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-light);animation:pulse 3s ease-in-out infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 3px var(--accent-light);}50%{box-shadow:0 0 0 5px var(--accent-light);}}
 nav .links{display:flex;gap:36px;align-items:center;}
-nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;position:relative;}
+nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;}
 nav .links a:hover{color:var(--text);}
 nav .cta{background:var(--text);color:#fff;padding:9px 22px;font-size:13.5px;font-weight:500;border-radius:100px;text-decoration:none;transition:all .25s;box-shadow:var(--shadow-sm);}
 nav .cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
 
-.hero{padding:160px 48px 100px;max-width:1000px;margin:0 auto;}
-.hero-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:72px;align-items:center;}
-.hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:28px;padding:6px 14px 6px 12px;background:var(--accent-light);border-radius:100px;border:1px solid rgba(45,90,62,0.12);}
+/* HERO */
+.hero-band{position:relative;overflow:hidden;padding:140px 48px 80px;max-width:1200px;margin:0 auto;}
+.hero-band:before{content:'';position:absolute;top:0;left:-10%;right:-10%;height:400px;
+background:
+radial-gradient(ellipse 60% 100% at 30% 100%,rgba(45,90,62,0.06),transparent 70%),
+radial-gradient(ellipse 50% 80% at 70% 100%,rgba(200,170,120,0.08),transparent 70%);
+z-index:-1;
+}
+.hero-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:64px;align-items:center;}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:24px;padding:6px 14px 6px 12px;background:var(--accent-light);border-radius:100px;border:1px solid rgba(45,90,62,0.12);}
 .hero .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink-dot 2s ease-in-out infinite;}
 @keyframes blink-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.hero h1{font-size:54px;font-weight:600;letter-spacing:-1.8px;line-height:1.06;margin-bottom:24px;}
+.hero h1{font-size:56px;font-weight:600;letter-spacing:-2px;line-height:1.04;margin-bottom:24px;}
 .hero h1 .accent{color:var(--accent);font-style:italic;font-family:'Instrument Serif',serif;font-weight:400;letter-spacing:-0.5px;}
-.hero .sub{font-size:19px;color:var(--muted);line-height:1.55;margin-bottom:36px;font-weight:300;max-width:420px;}
+.hero .sub{font-size:19px;color:var(--muted);line-height:1.55;margin-bottom:32px;font-weight:300;max-width:440px;}
 .hero-list{list-style:none;margin-bottom:36px;}
 .hero-list li{padding:14px 0;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;font-size:15px;color:var(--text);font-weight:500;transition:padding-left .25s;cursor:pointer;}
 .hero-list li:hover{padding-left:8px;}
@@ -76,17 +88,20 @@ nav .cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow-sm);}
 .btn-ghost:hover{border-color:var(--text);background:var(--surface);transform:translateY(-1px);}
 
-.float-card{background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:20px;padding:36px;box-shadow:var(--shadow-float);border:1px solid rgba(255,255,255,0.8);position:relative;overflow:hidden;}
+/* FLOAT CARD */
+.float-card{background:rgba(255,255,255,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:20px;padding:32px;box-shadow:var(--shadow-float);border:1px solid rgba(255,255,255,0.8);position:relative;overflow:hidden;}
 .float-card:before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.9),transparent);}
 .float-card .card-label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:24px;font-weight:600;}
 .float-card .card-label .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(90,138,110,0.15);animation:pulse-live 2s ease-in-out infinite;}
 @keyframes pulse-live{0%,100%{box-shadow:0 0 0 3px rgba(90,138,110,0.15);}50%{box-shadow:0 0 0 5px rgba(90,138,110,0.08);}}
-.float-card .metric-row{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid var(--line-soft);}
-.float-card .metric .num{font-size:38px;font-weight:600;letter-spacing:-1.5px;color:var(--text);margin-bottom:6px;line-height:1;}
+.float-card .metric-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--line-soft);}
+.float-card .metric .num{font-size:36px;font-weight:600;letter-spacing:-1.5px;color:var(--text);margin-bottom:4px;line-height:1;}
 .float-card .metric .label{font-size:12px;color:var(--muted);line-height:1.4;}
 .float-card .metric .trend{font-size:11.5px;color:var(--green);font-weight:500;margin-top:6px;display:flex;align-items:center;gap:4px;}
-.float-card .metric .trend .arrow{font-size:10px;}
-.float-card .data-table .row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);transition:padding-left .2s;}
+.float-card .sparkline{height:32px;margin-bottom:20px;display:flex;align-items:flex-end;gap:3px;}
+.float-card .sparkline .bar{flex:1;background:var(--accent-light);border-radius:2px 2px 0 0;transition:background .3s;}
+.float-card .sparkline .bar.peak{background:var(--accent);}
+.float-card .data-table .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-soft);transition:padding-left .2s;}
 .float-card .data-table .row:hover{padding-left:4px;}
 .float-card .data-table .row:last-child{border-bottom:none;}
 .float-card .data-table .topic{font-size:13px;color:var(--text);font-weight:400;}
@@ -97,7 +112,8 @@ nav .cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
 .float-card .data-table .val.stale{color:var(--subtle);}
 .float-card .data-table .val.stale:before{background:var(--subtle);}
 
-.stats{padding:90px 48px;text-align:center;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:rgba(237,233,224,0.4);}
+/* STATS */
+.stats{padding:80px 48px;text-align:center;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:rgba(237,233,224,0.4);}
 .stats-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:48px;}
 .stat{position:relative;}
 .stat:not(:last-child):after{content:'';position:absolute;right:-24px;top:20%;height:60%;width:1px;background:var(--line);}
@@ -105,8 +121,66 @@ nav .cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
 .stat .num .unit{font-size:24px;color:var(--muted);font-weight:400;margin-left:2px;}
 .stat .label{font-size:14px;color:var(--muted);font-weight:400;}
 
-.section{padding:130px 48px;max-width:1000px;margin:0 auto;}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-bottom:130px;}
+/* SECTION HEADERS */
+.section-head{max-width:680px;margin:0 auto 64px;text-align:center;}
+.section-head .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);font-weight:600;margin-bottom:16px;text-transform:uppercase;letter-spacing:1.5px;padding:5px 12px;background:var(--accent-light);border-radius:100px;}
+.section-head h2{font-size:38px;font-weight:600;letter-spacing:-1.2px;line-height:1.1;margin-bottom:16px;}
+.section-head h2 .accent{color:var(--accent);font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
+.section-head p{font-size:17px;color:var(--muted);line-height:1.6;font-weight:300;}
+
+/* FEATURE CARDS GRID */
+.features{padding:120px 48px;max-width:1100px;margin:0 auto;}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.feat-card{background:var(--surface);border-radius:20px;padding:32px;border:1px solid var(--line);box-shadow:var(--shadow-md);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s;}
+.feat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.feat-card .feat-icon{width:44px;height:44px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin-bottom:20px;position:relative;}
+.feat-card .feat-icon svg{width:22px;height:22px;stroke:var(--accent);stroke-width:1.5;fill:none;}
+.feat-card .feat-badge{position:absolute;top:32px;right:32px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);padding:3px 8px;background:var(--bg2);border-radius:6px;font-weight:500;letter-spacing:0.5px;}
+.feat-card h3{font-size:18px;font-weight:600;letter-spacing:-0.3px;margin-bottom:10px;}
+.feat-card h3 .accent{color:var(--accent);font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
+.feat-card p{font-size:14px;color:var(--muted);line-height:1.6;font-weight:300;margin-bottom:20px;}
+.feat-card .feat-visual{margin-top:20px;padding-top:20px;border-top:1px solid var(--line-soft);}
+.feat-card .mini-timeline{display:flex;align-items:center;gap:0;padding:8px 0;}
+.feat-card .mini-timeline .tl-node{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;}
+.feat-card .mini-timeline .tl-node.active{border-color:var(--accent);background:var(--accent-light);}
+.feat-card .mini-timeline .tl-node.stale{border-color:var(--subtle);}
+.feat-card .mini-timeline .tl-line{flex:1;height:2px;background:var(--line);margin:0 2px;}
+.feat-card .mini-timeline .tl-line.active{background:var(--accent);opacity:0.3;}
+.feat-card .mini-graph{display:flex;align-items:center;gap:8px;padding:8px 0;}
+.feat-card .mini-graph .gn{padding:4px 10px;border-radius:100px;font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--bg2);color:var(--text);}
+.feat-card .mini-graph .gn.hub{background:var(--accent);color:#fff;}
+.feat-card .mini-term{background:var(--bg2);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;}
+.feat-card .mini-term .prompt{color:var(--accent);}
+.feat-card .mini-term .out{color:var(--muted);}
+.feat-card .mini-term .ok{color:var(--green);}
+.feat-card .feat-link{font-size:13px;color:var(--text);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:gap .25s,color .2s;margin-top:16px;}
+.feat-card .feat-link:after{content:'\2192';transition:transform .25s;}
+.feat-card .feat-link:hover{color:var(--accent);gap:10px;}
+
+/* CODE SECTION */
+.code-section{padding:120px 48px;background:rgba(237,233,224,0.5);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
+.code-inner{max-width:900px;margin:0 auto;}
+.code-tabs{display:flex;gap:4px;margin-bottom:0;}
+.code-tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--muted);background:transparent;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:inherit;}
+.code-tab.active{background:var(--surface);color:var(--text);box-shadow:0 -1px 4px rgba(0,0,0,0.03);}
+.code-block{background:var(--surface);border-radius:0 16px 16px 16px;padding:32px;box-shadow:var(--shadow-md);border:1px solid var(--line);position:relative;overflow:hidden;}
+.code-block .term-dots{position:absolute;top:20px;right:20px;display:flex;gap:6px;}
+.code-block .term-dots span{width:10px;height:10px;border-radius:50%;background:var(--line);}
+.code-block .term-dots span:nth-child(1){background:#e88080;}
+.code-block .term-dots span:nth-child(2){background:#e8c47a;}
+.code-block .term-dots span:nth-child(3){background:#7ac88a;}
+.code-block pre{font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.8;color:var(--text);overflow-x:auto;}
+.code-block .c-prompt{color:var(--accent);font-weight:600;}
+.code-block .c-cmd{color:var(--text);font-weight:500;}
+.code-block .c-out{color:var(--muted);}
+.code-block .c-ok{color:var(--green);font-weight:500;}
+.code-block .c-warn{color:var(--amber);}
+.code-block .c-comment{color:var(--subtle);font-style:italic;}
+.code-block .c-string{color:var(--accent2);}
+
+/* SPLIT SECTIONS */
+.section{padding:120px 48px;max-width:1100px;margin:0 auto;}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin-bottom:100px;}
 .split:last-child{margin-bottom:0;}
 .split-right .text{order:2;}
 .split-right .visual{order:1;}
@@ -116,56 +190,111 @@ nav .cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
 .split .text h3 .accent{color:var(--accent);font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
 .split .text p{font-size:17px;color:var(--muted);line-height:1.6;font-weight:300;margin-bottom:24px;}
 .split .text .learn{font-size:14px;color:var(--text);text-decoration:none;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:gap .25s,color .2s;}
-.split .text .learn:after{content:'\2192';font-weight:400;transition:transform .25s;}
+.split .text .learn:after{content:'\2192';transition:transform .25s;}
 .split .text .learn:hover{color:var(--accent);gap:10px;}
 
-.feature-card{background:var(--surface);border-radius:20px;padding:32px;border:1px solid var(--line);box-shadow:var(--shadow-md);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s;}
-.feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
-.feature-card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--line-soft);}
-.feature-card .card-header .title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
-.feature-card .card-header .title .icon{width:16px;height:16px;border-radius:4px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);}
-.feature-card .card-header .badge{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:3px 8px;background:var(--bg2);border-radius:6px;}
-.feature-card .row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line-soft);transition:background .2s;border-radius:6px;padding-left:8px;padding-right:8px;}
-.feature-card .row:hover{background:var(--bg);}
-.feature-card .row:last-child{border-bottom:none;}
-.feature-card .row .key{font-size:13px;color:var(--text);font-family:'JetBrains Mono',monospace;font-weight:400;}
-.feature-card .row .val{font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:500;display:flex;align-items:center;gap:6px;}
-.feature-card .row .val:before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.feature-card .row .val.active{color:var(--green);}
-.feature-card .row .val.active:before{background:var(--green);}
-.feature-card .row .val.stale{color:var(--subtle);}
-.feature-card .row .val.stale:before{background:var(--subtle);}
-.feature-card .row .val.zero{color:var(--green);}
-.feature-card .row .val.zero:before{background:var(--green);}
+/* UI MOCKUP CARDS */
+.ui-card{background:var(--surface);border-radius:20px;padding:28px;border:1px solid var(--line);box-shadow:var(--shadow-md);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s;}
+.ui-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.ui-card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line-soft);}
+.ui-card .card-header .title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.ui-card .card-header .title .icon{width:20px;height:20px;border-radius:6px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);font-weight:600;}
+.ui-card .card-header .badge{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:3px 8px;background:var(--bg2);border-radius:6px;}
+.ui-card .row{display:flex;align-items:center;justify-content:space-between;padding:12px 8px;border-bottom:1px solid var(--line-soft);transition:background .2s;border-radius:6px;}
+.ui-card .row:hover{background:var(--bg);}
+.ui-card .row:last-child{border-bottom:none;}
+.ui-card .row .key{font-size:13px;color:var(--text);font-family:'JetBrains Mono',monospace;font-weight:400;}
+.ui-card .row .val{font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:500;display:flex;align-items:center;gap:6px;}
+.ui-card .row .val:before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ui-card .row .val.active{color:var(--green);}
+.ui-card .row .val.active:before{background:var(--green);}
+.ui-card .row .val.stale{color:var(--subtle);}
+.ui-card .row .val.stale:before{background:var(--subtle);}
+.ui-card .row .val.zero{color:var(--green);}
+.ui-card .row .val.zero:before{background:var(--green);}
+.ui-card .row .val.warn{color:var(--amber);}
+.ui-card .row .val.warn:before{background:var(--amber);}
 
-.diagram-card{background:var(--surface);border-radius:20px;padding:40px;border:1px solid var(--line);box-shadow:var(--shadow-md);position:relative;overflow:hidden;}
-.diagram-card:before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--green),var(--warm));opacity:0.3;}
-.diagram-node{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:100px;font-size:13px;font-weight:500;margin:0 auto 12px;transition:transform .25s,box-shadow .25s;}
-.diagram-node:hover{transform:scale(1.05);}
-.diagram-node.hub{background:var(--text);color:#fff;width:fit-content;box-shadow:var(--shadow-md);}
-.diagram-node.hub .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
-.diagram-node.sub{background:var(--bg2);color:var(--text);width:fit-content;font-size:12px;border:1px solid var(--line);}
-.diagram-node.accent{background:var(--accent);color:#fff;}
-.diagram-line{width:1px;height:28px;background:var(--line);margin:0 auto 12px;position:relative;}
-.diagram-line:before{content:'';position:absolute;top:-2px;left:-2px;width:5px;height:5px;border-radius:50%;background:var(--subtle);}
-.diagram-line:after{content:'';position:absolute;bottom:-2px;left:-2px;width:5px;height:5px;border-radius:50%;background:var(--subtle);}
-.diagram-row{display:flex;gap:12px;justify-content:center;margin-bottom:12px;}
-.diagram-row .diagram-node{margin:0;}
+/* Progress bar mockup */
+.ui-card .progress-list{display:flex;flex-direction:column;gap:14px;margin-top:4px;}
+.ui-card .progress-item .pl-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.ui-card .progress-item .pl-head .pl-label{color:var(--text);font-family:'JetBrains Mono',monospace;}
+.ui-card .progress-item .pl-head .pl-val{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.ui-card .progress-item .pl-bar{height:6px;background:var(--bg2);border-radius:100px;overflow:hidden;}
+.ui-card .progress-item .pl-fill{height:100%;border-radius:100px;transition:width .8s ease;}
+.ui-card .progress-item .pl-fill.high{background:var(--accent);}
+.ui-card .progress-item .pl-fill.mid{background:var(--amber);}
+.ui-card .progress-item .pl-fill.low{background:var(--subtle);}
 
-.punchline{padding:160px 48px;text-align:center;max-width:680px;margin:0 auto;}
+/* HOW IT WORKS */
+.how-section{padding:120px 48px;background:rgba(237,233,224,0.4);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
+.how-inner{max-width:1000px;margin:0 auto;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;position:relative;}
+.how-grid:before{content:'';position:absolute;top:36px;left:16%;right:16%;height:2px;background:linear-gradient(90deg,var(--accent),var(--green),var(--warm));opacity:0.2;z-index:0;}
+.how-step{text-align:center;position:relative;z-index:1;}
+.how-step .step-num{width:72px;height:72px;border-radius:50%;background:var(--surface);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;font-weight:600;color:var(--accent);box-shadow:var(--shadow-md);transition:transform .3s,box-shadow .3s;}
+.how-step:hover .step-num{transform:scale(1.05);box-shadow:var(--shadow-lg);border-color:var(--accent);}
+.how-step h4{font-size:18px;font-weight:600;letter-spacing:-0.3px;margin-bottom:10px;}
+.how-step h4 .accent{color:var(--accent);font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
+.how-step p{font-size:14px;color:var(--muted);line-height:1.6;font-weight:300;max-width:260px;margin:0 auto;}
+.how-step .step-code{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:left;box-shadow:var(--shadow-sm);}
+.how-step .step-code .sc-prompt{color:var(--accent);}
+.how-step .step-code .sc-out{color:var(--muted);}
+.how-step .step-code .sc-ok{color:var(--green);}
+
+/* ARCHITECTURE DIAGRAM */
+.diag-section{padding:120px 48px;max-width:1000px;margin:0 auto;}
+.diag-card{background:var(--surface);border-radius:24px;padding:48px;border:1px solid var(--line);box-shadow:var(--shadow-md);position:relative;overflow:hidden;}
+.diag-card:before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--green),var(--warm));opacity:0.3;}
+.diag-svg{width:100%;height:340px;display:block;}
+.diag-svg .hub{fill:var(--text);}
+.diag-svg .hub-text{fill:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;text-anchor:middle;dominant-baseline:central;}
+.diag-svg .sub-rect{fill:var(--bg2);stroke:var(--line);stroke-width:1;}
+.diag-svg .sub-text{fill:var(--text);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;text-anchor:middle;dominant-baseline:central;}
+.diag-svg .accent-rect{fill:var(--accent);}
+.diag-svg .accent-text{fill:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;text-anchor:middle;dominant-baseline:central;}
+.diag-svg .connector{stroke:var(--line);stroke-width:1.5;fill:none;stroke-dasharray:4 4;}
+.diag-svg .connector-dot{fill:var(--subtle);}
+.diag-legend{display:flex;gap:24px;justify-content:center;margin-top:28px;flex-wrap:wrap;}
+.diag-legend .lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.diag-legend .lg .swatch{width:14px;height:14px;border-radius:4px;}
+.diag-legend .lg .swatch.dark{background:var(--text);}
+.diag-legend .lg .swatch.light{background:var(--bg2);border:1px solid var(--line);}
+.diag-legend .lg .swatch.accent{background:var(--accent);}
+
+/* PUNCHLINE */
+.punchline{padding:140px 48px;text-align:center;max-width:680px;margin:0 auto;}
 .punchline h2{font-size:42px;font-weight:600;letter-spacing:-1.5px;line-height:1.1;margin-bottom:40px;}
 .punchline h2 .accent{color:var(--accent);font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;}
 .punchline .actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
 
-footer{padding:56px 48px;border-top:1px solid var(--line);text-align:center;}
-footer .footer-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-footer .footer-logo{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;color:var(--muted);}
-footer .footer-logo .mark{width:6px;height:6px;border-radius:50%;background:var(--accent);}
-footer p{font-size:13px;color:var(--muted);}
-footer .links{display:flex;gap:24px;}
-footer .links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s;}
-footer .links a:hover{color:var(--text);}
+/* FOOTER */
+.footer-band{position:relative;overflow:hidden;padding:80px 48px 0;
+background:
+radial-gradient(ellipse 70% 100% at 30% 100%,rgba(45,90,62,0.06),transparent 70%),
+radial-gradient(ellipse 50% 80% at 70% 100%,rgba(200,170,120,0.08),transparent 70%);
+}
+footer{padding:0 48px 48px;text-align:center;max-width:1000px;margin:0 auto;}
+footer .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;padding-bottom:48px;border-bottom:1px solid var(--line);margin-bottom:32px;text-align:left;}
+footer .footer-brand .logo{font-weight:600;font-size:20px;display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+footer .footer-brand .logo .mark{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+footer .footer-brand p{font-size:14px;color:var(--muted);line-height:1.6;font-weight:300;max-width:280px;}
+footer .footer-col h5{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:14px;}
+footer .footer-col a{display:block;font-size:14px;color:var(--text);text-decoration:none;margin-bottom:8px;transition:color .2s;}
+footer .footer-col a:hover{color:var(--accent);}
+footer .footer-bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+footer .footer-bottom p{font-size:13px;color:var(--muted);}
+footer .footer-bottom .social{display:flex;gap:16px;}
+footer .footer-bottom .social a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s;}
+footer .footer-bottom .social a:hover{color:var(--text);}
 
+/* RESPONSIVE */
+@media(max-width:900px){
+.feat-grid{grid-template-columns:1fr;}
+.how-grid{grid-template-columns:1fr;gap:48px;}
+.how-grid:before{display:none;}
+footer .footer-top{grid-template-columns:1fr 1fr;gap:32px;}
+}
 @media(max-width:768px){
 .hero h1{font-size:36px;}
 .hero-grid,.split{grid-template-columns:1fr;gap:48px;}
@@ -175,12 +304,16 @@ footer .links a:hover{color:var(--text);}
 .stat:not(:last-child):after{display:none;}
 .stat .num{font-size:42px;}
 .punchline h2{font-size:28px;}
+.section-head h2{font-size:28px;}
 .split .text h3{font-size:24px;}
 nav .links{display:none;}
-.hero,.section,.punchline,.stats{padding:80px 24px;}
-nav{padding:14px 24px;}
+.hero-band,.features,.code-section,.section,.how-section,.diag-section,.punchline{padding:80px 24px;}
+.footer-band{padding:60px 24px 0;}
+footer{padding:0 24px 40px;}
 .float-card .metric-row{grid-template-columns:1fr;gap:16px;}
-footer .footer-inner{flex-direction:column;text-align:center;}
+footer .footer-top{grid-template-columns:1fr;gap:24px;text-align:center;}
+footer .footer-brand .logo{justify-content:center;}
+footer .footer-bottom{flex-direction:column;text-align:center;}
 }
 </style>
 </head>
@@ -188,22 +321,25 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 <div class="painterly"></div>
 <div class="grain"></div>
 <div class="content">
+
 <nav>
 <div class="logo"><div class="mark"></div>cairn</div>
 <div class="links">
 <a href="#features">features</a>
-<a href="#compare">vs vector db</a>
+<a href="#code">usage</a>
+<a href="#how">how it works</a>
 <a href="https://github.com/valtors/cairn">docs</a>
 <a href="https://github.com/valtors/cairn" class="cta">star on github</a>
 </div>
 </nav>
 
-<div class="hero">
+<!-- HERO -->
+<div class="hero-band hero">
 <div class="hero-grid">
 <div class="text">
 <div class="eyebrow"><div class="dot"></div>agent wayfinding</div>
 <h1>your agent forgot <span class="accent">everything</span></h1>
-<p class="sub">persistent, bi-temporal memory for ai agents. one sqlite file. zero llm calls. no server, no cloud.</p>
+<p class="sub">persistent, bi-temporal memory for ai agents. one sqlite file. zero llm calls. no server, no cloud, no vector database.</p>
 <ul class="hero-list">
 <li>bi-temporal storage<span class="plus">+</span></li>
 <li>decay-based forgetting<span class="plus">+</span></li>
@@ -222,17 +358,30 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 <div class="metric">
 <div class="num">0.92</div>
 <div class="label">avg confidence across active facts</div>
-<div class="trend"><span class="arrow">&#8593;</span> +12% from last session</div>
+<div class="trend"><span>&#8593;</span> +12% from last session</div>
 </div>
 <div class="metric">
 <div class="num">38</div>
 <div class="label">facts stored / 4 stale</div>
-<div class="trend"><span class="arrow">&#8593;</span> +6 new this session</div>
+<div class="trend"><span>&#8593;</span> +6 new this session</div>
 </div>
+</div>
+<div class="sparkline" id="spark">
+<div class="bar" style="height:30%"></div>
+<div class="bar" style="height:45%"></div>
+<div class="bar" style="height:35%"></div>
+<div class="bar" style="height:60%"></div>
+<div class="bar" style="height:50%"></div>
+<div class="bar" style="height:75%"></div>
+<div class="bar peak" style="height:90%"></div>
+<div class="bar" style="height:65%"></div>
+<div class="bar" style="height:80%"></div>
+<div class="bar peak" style="height:95%"></div>
+<div class="bar" style="height:70%"></div>
+<div class="bar" style="height:85%"></div>
 </div>
 <div class="data-table">
 <div class="row"><span class="topic">os: linux</span><span class="val up">active 0.92</span></div>
-<div class="row"><span class="topic">os: macos</span><span class="val stale">closed</span></div>
 <div class="row"><span class="topic">editor: vim</span><span class="val up">active 0.88</span></div>
 <div class="row"><span class="topic">theme: dark</span><span class="val up">active 1.00</span></div>
 <div class="row"><span class="topic">framework: react</span><span class="val stale">0.12 decaying</span></div>
@@ -242,6 +391,7 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 </div>
 </div>
 
+<!-- STATS -->
 <div class="stats">
 <div class="stats-inner">
 <div class="stat"><div class="num">0</div><div class="label">llm calls to store or retrieve</div></div>
@@ -250,24 +400,130 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 </div>
 </div>
 
-<div class="section" id="features">
+<!-- FEATURE CARDS -->
+<div class="features" id="features">
+<div class="section-head">
+<div class="eyebrow">core capabilities</div>
+<h2>memory that works like <span class="accent">memory</span></h2>
+<p>not a vector store. not a key-value cache. real bi-temporal memory with decay, graph traversal, and zero external dependencies.</p>
+</div>
+<div class="feat-grid">
+
+<div class="feat-card">
+<div class="feat-badge">CORE</div>
+<div class="feat-icon">
+<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 12h6"/><path d="M6 9v-3"/><path d="M18 9v-3"/></svg>
+</div>
+<h3>bi-temporal <span class="accent">storage</span></h3>
+<p>every fact has valid-from and transaction time. track what was true when, not just what's true now. facts have history.</p>
+<div class="feat-visual">
+<div class="mini-timeline">
+<div class="tl-node active"></div>
+<div class="tl-line active"></div>
+<div class="tl-node active"></div>
+<div class="tl-line active"></div>
+<div class="tl-node active"></div>
+<div class="tl-line"></div>
+<div class="tl-node stale"></div>
+</div>
+</div>
+<a href="https://github.com/valtors/cairn" class="feat-link">explore</a>
+</div>
+
+<div class="feat-card">
+<div class="feat-badge">CORE</div>
+<div class="feat-icon">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M12 9v6"/><path d="M9 18h6"/></svg>
+</div>
+<h3>graph <span class="accent">traversal</span></h3>
+<p>walk the memory graph. find related facts by connection, not just similarity. context that chains across sessions.</p>
+<div class="feat-visual">
+<div class="mini-graph">
+<span class="gn hub">context</span>
+<span class="gn">memory</span>
+<span class="gn">recall</span>
+</div>
+</div>
+<a href="https://github.com/valtors/cairn" class="feat-link">explore</a>
+</div>
+
+<div class="feat-card">
+<div class="feat-badge">DX</div>
+<div class="feat-icon">
+<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18" cy="18" r="3"/></svg>
+</div>
+<h3>zero <span class="accent">config</span></h3>
+<p>no api keys, no embeddings, no cloud account. one binary, one sqlite file. ship in minutes, not sprints.</p>
+<div class="feat-visual">
+<div class="mini-term">
+<div><span class="prompt">$</span> <span class="out">cairn init</span></div>
+<div><span class="ok">created memory.db</span></div>
+</div>
+</div>
+<a href="https://github.com/valtors/cairn" class="feat-link">explore</a>
+</div>
+
+</div>
+</div>
+
+<!-- CODE EXAMPLE -->
+<div class="code-section" id="code">
+<div class="section-head">
+<div class="eyebrow">usage</div>
+<h2>four commands. <span class="accent">that's it.</span></h2>
+<p>no sdk to learn, no client to install, no dashboard to configure. cairn runs from your terminal.</p>
+</div>
+<div class="code-inner">
+<div class="code-tabs">
+<button class="code-tab active" onclick="return false">terminal</button>
+</div>
+<div class="code-block">
+<div class="term-dots"><span></span><span></span><span></span></div>
+<pre>
+<span class="c-prompt">$</span> <span class="c-cmd">cairn init</span>
+<span class="c-ok">  created memory.db</span>
+
+<span class="c-prompt">$</span> <span class="c-cmd">cairn remember "user prefers dark mode"</span>
+<span class="c-ok">  stored: pref:dark-mode (conf: 1.00)</span>
+
+<span class="c-prompt">$</span> <span class="c-cmd">cairn recall "what theme does the user like?"</span>
+<span class="c-out">  dark (conf: 0.92, 2h ago)</span>
+<span class="c-out">  dark-mode (conf: 1.00, 3h ago)</span>
+
+<span class="c-prompt">$</span> <span class="c-cmd">cairn forget --stale</span>
+<span class="c-warn">  pruning 4 facts below threshold</span>
+<span class="c-ok">  pruned: framework:angular (0.03)</span>
+<span class="c-ok">  pruned: editor:emacs (0.01)</span>
+<span class="c-ok">  pruned: os:macos (0.00)</span>
+<span class="c-ok">  pruned: theme:light (0.00)</span>
+
+<span class="c-comment"># no llm calls. no tokens spent. no api keys.</span>
+</pre>
+</div>
+</div>
+</div>
+
+<!-- DEEP DIVES -->
+<div class="section">
+
 <div class="split">
 <div class="text">
 <div class="section-eyebrow"><span class="num-badge">01</span> temporal</div>
-<h3>bi-temporal <span class="accent">storage</span></h3>
-<p>every fact has valid-from and transaction time. track what was true when, not just what's true now. facts don't just exist -- they have history.</p>
+<h3>facts have <span class="accent">history</span></h3>
+<p>every fact tracks when it became true and when it was stored. query the past, not just the present. contradicting facts coexist with timestamps.</p>
 <a href="https://github.com/valtors/cairn" class="learn">explore</a>
 </div>
 <div class="visual">
-<div class="feature-card">
+<div class="ui-card">
 <div class="card-header">
-<div class="title"><div class="icon">T</div>timeline</div>
+<div class="title"><div class="icon">T</div>timeline view</div>
 <div class="badge">live</div>
 </div>
+<div class="row"><span class="key">os: linux</span><span class="val active">active now</span></div>
 <div class="row"><span class="key">os: macos</span><span class="val stale">closed 03-15</span></div>
-<div class="row"><span class="key">os: linux</span><span class="val active">active</span></div>
-<div class="row"><span class="key">editor: vim</span><span class="val active">active</span></div>
-<div class="row"><span class="key">theme: dark</span><span class="val active">active</span></div>
+<div class="row"><span class="key">editor: vim</span><span class="val active">active 2h ago</span></div>
+<div class="row"><span class="key">theme: dark</span><span class="val active">active 3h ago</span></div>
+<div class="row"><span class="key">theme: light</span><span class="val stale">closed 01-20</span></div>
 </div>
 </div>
 </div>
@@ -275,20 +531,34 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 <div class="split split-right">
 <div class="text">
 <div class="section-eyebrow"><span class="num-badge">02</span> forgetting</div>
-<h3>decay-based <span class="accent">forgetting</span></h3>
-<p>stale facts fade automatically. confidence decays over time. agents forget what no longer matters, so the signal stays clean.</p>
+<h3>stale facts <span class="accent">fade</span></h3>
+<p>confidence decays over time. agents forget what no longer matters, so the signal stays clean. no manual cleanup, no stale data clogging recall.</p>
 <a href="https://github.com/valtors/cairn" class="learn">explore</a>
 </div>
 <div class="visual">
-<div class="feature-card">
+<div class="ui-card">
 <div class="card-header">
-<div class="title"><div class="icon">D</div>decay</div>
+<div class="title"><div class="icon">D</div>decay monitor</div>
 <div class="badge">auto</div>
 </div>
-<div class="row"><span class="key">pref: react</span><span class="val active">conf 0.91</span></div>
-<div class="row"><span class="key">pref: angular</span><span class="val stale">conf 0.12</span></div>
-<div class="row"><span class="key">pref: svelte</span><span class="val stale">conf 0.08</span></div>
-<div class="row"><span class="key">pref: vue</span><span class="val stale">conf 0.03</span></div>
+<div class="progress-list">
+<div class="progress-item">
+<div class="pl-head"><span class="pl-label">pref: react</span><span class="pl-val">conf 0.91</span></div>
+<div class="pl-bar"><div class="pl-fill high" style="width:91%"></div></div>
+</div>
+<div class="progress-item">
+<div class="pl-head"><span class="pl-label">pref: angular</span><span class="pl-val">conf 0.12</span></div>
+<div class="pl-bar"><div class="pl-fill low" style="width:12%"></div></div>
+</div>
+<div class="progress-item">
+<div class="pl-head"><span class="pl-label">pref: svelte</span><span class="pl-val">conf 0.08</span></div>
+<div class="pl-bar"><div class="pl-fill low" style="width:8%"></div></div>
+</div>
+<div class="progress-item">
+<div class="pl-head"><span class="pl-label">pref: vue</span><span class="pl-val">conf 0.03</span></div>
+<div class="pl-bar"><div class="pl-fill low" style="width:3%"></div></div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -301,9 +571,9 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 <a href="https://github.com/valtors/cairn" class="learn">explore</a>
 </div>
 <div class="visual">
-<div class="feature-card">
+<div class="ui-card">
 <div class="card-header">
-<div class="title"><div class="icon">E</div>extract</div>
+<div class="title"><div class="icon">E</div>extraction</div>
 <div class="badge">0ms</div>
 </div>
 <div class="row"><span class="key">extract: regex</span><span class="val zero">0ms $0.00</span></div>
@@ -313,37 +583,95 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 </div>
 </div>
 </div>
+
 </div>
 
-<div class="section" id="compare">
-<div class="split">
-<div class="text">
-<div class="section-eyebrow">vs legacy</div>
-<h3>a vector db stores chunks.<br>cairn stores <span class="accent">facts</span>.</h3>
-<p>vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire. one sqlite file. zero llm calls.</p>
-<a href="https://github.com/valtors/cairn" class="learn">explore</a>
+<!-- HOW IT WORKS -->
+<div class="how-section" id="how">
+<div class="how-inner">
+<div class="section-head">
+<div class="eyebrow">how it works</div>
+<h2>three steps, <span class="accent">zero magic</span></h2>
+<p>no embeddings pipeline. no vector index. no inference server. just sqlite and regex.</p>
 </div>
-<div class="visual">
-<div class="diagram-card">
-<div class="diagram-node hub"><div class="dot"></div>cairn</div>
-<div class="diagram-line"></div>
-<div class="diagram-row">
-<div class="diagram-node sub">remember</div>
-<div class="diagram-node sub">recall</div>
+<div class="how-grid">
+<div class="how-step">
+<div class="step-num">1</div>
+<h4>remember</h4>
+<p>cairn parses text with regex and keyword extraction. facts get stored with confidence and timestamps.</p>
+<div class="step-code">
+<div><span class="sc-prompt">$</span> cairn remember "user likes vim"</div>
+<div><span class="sc-ok">stored: editor:vim (1.0)</span></div>
 </div>
-<div class="diagram-line"></div>
-<div class="diagram-row">
-<div class="diagram-node sub">forget</div>
-<div class="diagram-node sub">extract</div>
-<div class="diagram-node sub">mcp</div>
 </div>
-<div class="diagram-line"></div>
-<div class="diagram-node accent">one sqlite file</div>
+<div class="how-step">
+<div class="step-num">2</div>
+<h4>recall</h4>
+<p>query by keyword or graph traversal. cairn returns facts ranked by confidence and recency, not similarity.</p>
+<div class="step-code">
+<div><span class="sc-prompt">$</span> cairn recall "editor"</div>
+<div><span class="sc-out">vim (0.92, 2h ago)</span></div>
+</div>
+</div>
+<div class="how-step">
+<div class="step-num">3</div>
+<h4>forget</h4>
+<p>confidence decays automatically. facts below threshold get pruned. your memory stays clean without manual cleanup.</p>
+<div class="step-code">
+<div><span class="sc-prompt">$</span> cairn forget --stale</div>
+<div><span class="sc-ok">pruned 4 facts</span></div>
+</div>
 </div>
 </div>
 </div>
 </div>
 
+<!-- ARCHITECTURE DIAGRAM -->
+<div class="diag-section" id="compare">
+<div class="section-head">
+<div class="eyebrow">architecture</div>
+<h2>a vector db stores chunks.<br>cairn stores <span class="accent">facts</span>.</h2>
+<p>vector databases return the same text chunks every time. cairn tracks how facts evolve, contradict, and expire.</p>
+</div>
+<div class="diag-card">
+<svg class="diag-svg" viewBox="0 0 600 340">
+<!-- connectors -->
+<path class="connector" d="M300 60 Q300 100 300 130"/>
+<path class="connector" d="M300 200 Q200 230 140 250"/>
+<path class="connector" d="M300 200 Q400 230 460 250"/>
+<path class="connector" d="M300 200 Q300 240 300 270"/>
+<circle class="connector-dot" cx="300" cy="60" r="3"/>
+<circle class="connector-dot" cx="140" cy="250" r="3"/>
+<circle class="connector-dot" cx="460" cy="250" r="3"/>
+<circle class="connector-dot" cx="300" cy="270" r="3"/>
+
+<!-- hub -->
+<rect class="hub" x="250" y="130" width="100" height="70" rx="35"/>
+<text class="hub-text" x="300" y="165">cairn</text>
+
+<!-- top node -->
+<rect class="accent-rect" x="245" y="20" width="110" height="40" rx="20"/>
+<text class="accent-text" x="300" y="40">one sqlite file</text>
+
+<!-- bottom nodes -->
+<rect class="sub-rect" x="80" y="230" width="120" height="40" rx="20"/>
+<text class="sub-text" x="140" y="250">remember</text>
+
+<rect class="sub-rect" x="250" y="270" width="100" height="40" rx="20"/>
+<text class="sub-text" x="300" y="290">recall</text>
+
+<rect class="sub-rect" x="400" y="230" width="120" height="40" rx="20"/>
+<text class="sub-text" x="460" y="250">forget</text>
+</svg>
+<div class="diag-legend">
+<div class="lg"><div class="swatch dark"></div> core engine</div>
+<div class="lg"><div class="swatch light"></div> memory primitives</div>
+<div class="lg"><div class="swatch accent"></div> storage layer</div>
+</div>
+</div>
+</div>
+
+<!-- PUNCHLINE -->
 <div class="punchline">
 <h2>agents leave cairns to mark <span class="accent">what they learned</span></h2>
 <div class="actions">
@@ -352,17 +680,45 @@ footer .footer-inner{flex-direction:column;text-align:center;}
 </div>
 </div>
 
+<!-- FOOTER -->
+<div class="footer-band">
 <footer>
-<div class="footer-inner">
-<div class="footer-logo"><div class="mark"></div>cairn</div>
-<div class="links">
+<div class="footer-top">
+<div class="footer-brand">
+<div class="logo"><div class="mark"></div>cairn</div>
+<p>agent wayfinding. persistent memory for ai agents. one sqlite file, zero llm calls.</p>
+</div>
+<div class="footer-col">
+<h5>product</h5>
+<a href="#features">features</a>
+<a href="#code">usage</a>
+<a href="#how">how it works</a>
+<a href="#compare">architecture</a>
+</div>
+<div class="footer-col">
+<h5>resources</h5>
 <a href="https://github.com/valtors/cairn">github</a>
 <a href="https://github.com/valtors/cairn#readme">docs</a>
 <a href="https://github.com/valtors/cairn/issues">issues</a>
+<a href="https://github.com/valtors/cairn/releases">releases</a>
 </div>
+<div class="footer-col">
+<h5>community</h5>
+<a href="https://github.com/valtors/cairn/fork">fork</a>
+<a href="https://github.com/valtors/cairn/blob/main/CONTRIBUTING.md">contribute</a>
+<a href="https://github.com/valtors/cairn/discussions">discussions</a>
+</div>
+</div>
+<div class="footer-bottom">
 <p>mit license. rust. one file.</p>
+<div class="social">
+<a href="https://github.com/valtors/cairn">github</a>
+<a href="https://github.com/valtors/cairn#readme">docs</a>
+</div>
 </div>
 </footer>
+</div>
+
 </div>
 <script>
 gsap.registerPlugin(ScrollTrigger);
@@ -370,10 +726,15 @@ document.addEventListener('DOMContentLoaded',function(){
 gsap.from('.hero .text > *',{opacity:0,y:20,duration:0.6,stagger:0.08,delay:0.1,ease:'power2.out'});
 gsap.from('.float-card',{opacity:0,y:40,duration:0.9,delay:0.3,ease:'power3.out'});
 gsap.utils.toArray('.stat').forEach(function(s,i){gsap.from(s,{opacity:0,y:30,duration:0.6,delay:i*0.1,scrollTrigger:{trigger:s,start:'top 88%'}});});
+gsap.utils.toArray('.feat-card').forEach(function(s,i){gsap.from(s,{opacity:0,y:40,duration:0.6,delay:i*0.1,scrollTrigger:{trigger:s,start:'top 85%'}});});
+gsap.from('.code-block',{opacity:0,y:40,duration:0.7,scrollTrigger:{trigger:'.code-section',start:'top 80%'}});
 gsap.utils.toArray('.split').forEach(function(s){gsap.from(s,{opacity:0,y:40,duration:0.7,scrollTrigger:{trigger:s,start:'top 82%'}});});
+gsap.utils.toArray('.how-step').forEach(function(s,i){gsap.from(s,{opacity:0,y:30,duration:0.6,delay:i*0.12,scrollTrigger:{trigger:'.how-grid',start:'top 80%'}});});
+gsap.from('.diag-card',{opacity:0,y:40,duration:0.8,scrollTrigger:{trigger:'.diag-section',start:'top 80%'}});
 gsap.from('.punchline h2',{opacity:0,y:40,duration:0.8,scrollTrigger:{trigger:'.punchline',start:'top 75%'}});
 gsap.from('.punchline .actions',{opacity:0,y:20,duration:0.6,delay:0.2,scrollTrigger:{trigger:'.punchline',start:'top 75%'}});
-gsap.from('footer .footer-inner > *',{opacity:0,y:15,duration:0.5,stagger:0.08,scrollTrigger:{trigger:'footer',start:'top 95%'}});
+gsap.from('footer .footer-top > *',{opacity:0,y:20,duration:0.5,stagger:0.08,scrollTrigger:{trigger:'.footer-band',start:'top 90%'}});
+gsap.from('footer .footer-bottom > *',{opacity:0,y:15,duration:0.5,stagger:0.08,scrollTrigger:{trigger:'.footer-band',start:'top 95%'}});
 document.querySelectorAll('.float-card .metric .num').forEach(function(el){var raw=el.textContent;var target=parseFloat(raw);if(isNaN(target))return;var isFloat=raw.includes('.');gsap.fromTo(el,{textContent:0},{textContent:target,duration:1.5,delay:0.5,ease:'power2.out',snap:{textContent:isFloat?0.01:1},onUpdate:function(){el.textContent=isFloat?parseFloat(el.textContent).toFixed(2):Math.round(parseFloat(el.textContent));}});});
 });
 </script>
