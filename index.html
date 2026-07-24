@@ -3,591 +3,977 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>cairn — agent wayfinding</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<title>cairn - your agent remembers.</title>
+<meta name="description" content="agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
---black:#0a0a0a;--ink:#1a1a1a;--white:#fff;--paper:#fafafa;
---g50:#f5f5f5;--g100:#f0f0f0;--g200:#e5e5e5;--g300:#d5d5d5;
---g400:#a0a0a0;--g500:#707070;--g600:#4a4a4a;--g700:#2a2a2a;
---border:#e5e5e5;--border-mid:#d0d0d0;--border-strong:#1a1a1a;
+:root {
+  --bg: #0a0a0a;
+  --fg: #e8e8e8;
+  --dim: #555;
+  --dimmer: #333;
+  --accent: #7c7c7c;
+  --stone: #888;
+  --mono: 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
 }
-html{scroll-behavior:smooth}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--white);color:var(--ink);font-size:15px;line-height:1.6;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.022;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:multiply}
-.mono{font-family:'JetBrains Mono','SF Mono',monospace;font-weight:400}
-.serif{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-weight:400}
-a{color:inherit;text-decoration:none}
-.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
 
-/* NAV */
-nav{padding:20px 0;border-bottom:1px solid var(--border)}
-nav .wrap{display:flex;align-items:center;justify-content:space-between}
-.nav-left{display:flex;align-items:center;gap:32px}
-.nav-brand{font-family:'Inter',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--black)}
-.nav-brand::after{content:'.'}
-.nav-links{display:flex;gap:28px;list-style:none}
-.nav-links a{font-size:13px;color:var(--g500);transition:color .2s}
-.nav-links a:hover{color:var(--black)}
-.nav-right{display:flex;align-items:center;gap:16px}
-.btn-star{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--border-strong);border-radius:6px;font-size:12px;font-weight:500;transition:all .15s}
-.btn-star:hover{background:var(--black);color:var(--white)}
-.btn-star svg{width:13px;height:13px}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* HERO */
-.hero{padding:0}
-.hero-inner{border:1px solid var(--border-strong);margin:32px 40px;border-radius:12px;overflow:hidden}
-.hero .wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:64px;align-items:center;padding:60px 40px}
-.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g500);margin-bottom:20px;letter-spacing:.02em}
-.hero h1{font-size:56px;line-height:1.02;letter-spacing:-.03em;font-weight:700;margin-bottom:20px;color:var(--black)}
-.hero h1 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
-.hero-sub{font-size:16px;color:var(--g600);line-height:1.55;margin-bottom:32px;max-width:440px}
-.cta-group{display:flex;gap:12px;margin-bottom:16px}
-.btn-primary{display:inline-flex;align-items:center;padding:12px 20px;background:var(--black);color:var(--white);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--black);transition:all .15s;cursor:pointer}
-.btn-primary:hover{background:var(--g700);border-color:var(--g700)}
-.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:12px 20px;background:var(--white);color:var(--black);border:1px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer}
-.btn-secondary:hover{background:var(--g50)}
-.hero-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g500)}
-.hero-badge::before{content:'> '}
+html { scroll-behavior: smooth; }
 
-.hero-right{position:relative;display:flex;justify-content:center;align-items:center}
-.illustration{width:100%;max-width:400px}
-.illustration svg{width:100%;height:auto}
-.terminal{position:absolute;bottom:-30px;left:-20px;width:320px;background:var(--white);border:1px solid var(--border-strong);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.06);overflow:hidden}
-.terminal-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--g50)}
-.term-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--g300)}
-.term-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500);margin-left:6px}
-.terminal-body{padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8}
-.term-line{color:var(--ink)}
-.term-prompt{color:var(--g400);margin-right:4px}
-.term-out{color:var(--g500);padding-left:12px}
-.term-cursor{display:inline-block;width:7px;height:13px;background:var(--black);animation:blink 1s steps(1) infinite;vertical-align:text-bottom}
-@keyframes blink{50%{opacity:0}}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  overflow-x: hidden;
+  cursor: default;
+}
 
-/* TRUST BAR */
-.trust{padding:24px 0;border-bottom:1px solid var(--border)}
-.trust .wrap{display:flex;align-items:center;gap:32px}
-.trust-label{font-size:12px;color:var(--g500);flex-shrink:0}
-.trust-logos{display:flex;gap:36px;align-items:center;flex-wrap:wrap}
-.trust-logo{font-size:14px;font-weight:600;color:var(--g600);letter-spacing:-.01em;opacity:.7;transition:opacity .2s}
-.trust-logo:hover{opacity:1}
+::selection { background: #e8e8e8; color: #0a0a0a; }
 
-/* MID TEXT BLOCK (between dashboard and features) */
-.midtext{padding:60px 0;text-align:center;border-bottom:1px solid var(--border)}
-.midtext .wrap{max-width:800px}
-.midtext h2{font-size:40px;line-height:1.05;letter-spacing:-.03em;font-weight:700;margin-bottom:12px}
-.midtext h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
-.midtext p{font-size:16px;color:var(--g500);line-height:1.5}
+/* --- noise overlay --- */
+.noise {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' /%3E%3C/svg%3E");
+}
 
-/* DASHBOARD */
-.dashboard{padding:80px 0;border-bottom:1px solid var(--border)}
-.dashboard .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:24px}
-.card{border:1px solid var(--border);border-radius:12px;padding:28px;background:var(--white);transition:border-color .2s}
-.card:hover{border-color:var(--border-mid)}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--g100)}
-.card-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--black)}
-.live-dot{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500)}
-.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--black);animation:pulse 2s infinite}
-@keyframes pulse{50%{opacity:.2}}
-.card-link{font-size:12px;color:var(--g500);display:inline-flex;align-items:center;gap:4px;transition:color .15s}
-.card-link:hover{color:var(--black)}
-.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.metric{display:flex;flex-direction:column;gap:4px}
-.metric-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500);letter-spacing:.03em}
-.metric-value{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--black)}
-.metric-delta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g500)}
-.bar-chart{display:flex;align-items:flex-end;gap:3px;height:48px;padding-top:8px;border-top:1px solid var(--g100);margin-top:20px}
-.bar{flex:1;background:var(--g300);border-radius:1px;min-height:4px;transition:background .2s}
-.bar.active{background:var(--black)}
-.fact-list{list-style:none;display:flex;flex-direction:column;gap:14px}
-.fact-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--g100)}
-.fact-item:last-child{border-bottom:none;padding-bottom:0}
-.fact-text{font-size:14px;color:var(--g600);line-height:1.4}
-.fact-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g400);white-space:nowrap;padding-top:2px}
-.fact-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--black);margin-right:8px;vertical-align:middle}
+/* --- nav --- */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 2rem;
+  background: rgba(10,10,10,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1a1a1a;
+}
 
-/* FEATURES (not chunks. facts.) */
-.features{padding:80px 0;border-bottom:1px solid var(--border)}
-.features .section-head{text-align:center;max-width:800px;margin:0 auto 56px}
-.features .section-head h2{font-size:40px;line-height:1.05;letter-spacing:-.03em;font-weight:700;margin-bottom:12px}
-.features .section-head h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
-.features .section-head p{font-size:16px;color:var(--g500);line-height:1.5}
-.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1120px;margin:0 auto;padding:0 40px}
-.feature-box{border:1px solid var(--border);border-radius:12px;padding:28px;text-align:left;transition:border-color .2s}
-.feature-box:hover{border-color:var(--border-mid)}
-.feature-icon{width:32px;height:32px;border:1px solid var(--border-strong);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700}
-.feature-title{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--black)}
-.feature-desc{font-size:13px;color:var(--g500);line-height:1.5;margin-bottom:16px}
-.feature-tag{display:inline-block;padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g600)}
-.feature-tag.dark{background:var(--black);color:var(--white);border-color:var(--black)}
+nav .logo {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+nav .logo span { color: var(--dim); }
 
-/* DEEP DIVE */
-.deepdive{padding:80px 0;border-bottom:1px solid var(--border);max-width:1120px;margin:0 auto;padding-left:40px;padding-right:40px}
-.dd-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.dd-box{border:1px solid var(--border);border-radius:12px;padding:28px;transition:border-color .2s}
-.dd-box:hover{border-color:var(--border-mid)}
-.dd-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--black);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--g100)}
-.dd-table{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-.dd-table li{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px}
-.dd-key{color:var(--g600)}
-.dd-time{color:var(--g400)}
-.dd-foot{font-size:12px;color:var(--g500);font-style:italic;text-align:center;padding-top:12px;border-top:1px solid var(--g100)}
-.donut-wrap{display:flex;align-items:center;justify-content:center;gap:20px;margin:16px 0}
-.donut{position:relative;width:100px;height:100px}
-.donut svg{transform:rotate(-90deg)}
-.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--black)}
-.donut-legend{display:flex;flex-direction:column;gap:6px}
-.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--g600)}
-.legend-dot{width:8px;height:8px;border-radius:50%}
-.legend-dot.fresh{background:var(--black)}
-.legend-dot.decaying{background:var(--g400)}
-.legend-dot.stale{background:var(--g300)}
-.dd-code{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:var(--g600);margin-bottom:16px}
-.dd-code .k{color:var(--black);font-weight:500}
-.dd-code .v{color:var(--g500)}
+nav .links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
 
-/* COMMANDS */
-.commands{padding:80px 0;border-bottom:1px solid var(--border);text-align:center}
-.commands .wrap{max-width:1120px}
-.commands .section-head{max-width:800px;margin:0 auto 48px}
-.commands .section-head h2{font-size:40px;line-height:1.05;letter-spacing:-.03em;font-weight:700;margin-bottom:12px}
-.commands .section-head h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
-.commands .section-head p{font-size:16px;color:var(--g500);line-height:1.5}
-.cmd-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.cmd-box{border:1px solid var(--border);border-radius:12px;padding:32px;text-align:left;transition:border-color .2s}
-.cmd-box:hover{border-color:var(--border-mid)}
-.cmd-num{font-family:'Instrument Serif',serif;font-style:italic;font-size:48px;color:var(--g300);line-height:1;margin-bottom:16px}
-.cmd-title{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--black);margin-bottom:8px}
-.cmd-desc{font-size:13px;color:var(--g500);margin-bottom:20px;line-height:1.5}
-.cmd-code{font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px 14px;background:var(--g50);border:1px solid var(--border);border-radius:6px;color:var(--ink)}
+nav a {
+  color: var(--dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+nav a:hover { color: var(--fg); }
 
-/* CTA BAR */
-.cta-bar{padding:64px 0;background:var(--black);color:var(--white)}
-.cta-bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:40px}
-.cta-text{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.15;max-width:500px}
-.cta-text em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
-.cta-btns{display:flex;gap:12px;flex-shrink:0}
-.cta-dark{padding:12px 20px;background:var(--g700);color:var(--white);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--g700);cursor:pointer;transition:opacity .15s}
-.cta-dark:hover{opacity:.85}
-.cta-light{padding:12px 20px;background:transparent;color:var(--white);border:1px solid var(--g700);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
-.cta-light:hover{background:var(--g700)}
+nav .star-btn {
+  border: 1px solid #2a2a2a;
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+nav .star-btn:hover {
+  border-color: var(--fg);
+  background: #111;
+}
 
-/* FOOTER */
-footer{padding:60px 0 40px}
-footer .wrap{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px}
-.foot-brand{font-size:18px;font-weight:700;margin-bottom:12px;color:var(--black)}
-.foot-brand::after{content:'.'}
-.foot-tag{font-size:13px;color:var(--g500);line-height:1.5;max-width:240px}
-.foot-col h4{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--black);margin-bottom:14px}
-.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:8px}
-.foot-col a{font-size:13px;color:var(--g500);transition:color .15s}
-.foot-col a:hover{color:var(--black)}
-.foot-bottom{max-width:1120px;margin:40px auto 0;padding:24px 40px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.foot-bottom p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g400)}
+/* --- hero --- */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 2rem;
+}
 
-@media(max-width:860px){
-.hero .wrap,.dashboard .wrap,.feature-row,.dd-row,.cmd-row{grid-template-columns:1fr}
-.cta-bar .wrap{flex-direction:column;text-align:center}
-footer .wrap{grid-template-columns:1fr 1fr}
-.terminal{position:relative;bottom:auto;left:auto;width:100%;max-width:380px;margin:20px auto 0}
-.foot-bottom{flex-direction:column;gap:8px;text-align:center}
-.trust .wrap{flex-direction:column}
-.hero h1{font-size:36px}
-.hero-inner{margin:16px}
+.hero pre {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--dimmer);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: pre;
+  z-index: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  animation: drift 60s linear infinite;
+}
+
+@keyframes drift {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.hero-text h1 {
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  margin-bottom: 1.5rem;
+}
+
+.hero-text h1 .period { color: var(--dim); }
+
+.hero-text p {
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  color: var(--dim);
+  max-width: 520px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+}
+
+.hero-text p em {
+  font-style: italic;
+  color: var(--fg);
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid var(--fg);
+}
+.btn-primary:hover {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid #2a2a2a;
+}
+.btn-ghost:hover {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+/* --- scroll indicator --- */
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dimmer);
+  letter-spacing: 0.2em;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.3; }
+  50% { transform: translateX(-50%) translateY(8px); opacity: 0.8; }
+}
+
+/* --- section base --- */
+section {
+  padding: 8rem 2rem;
+  position: relative;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dimmer);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+/* --- spaced letters --- */
+.spaced-letters {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  line-height: 1.2;
+  margin-bottom: 3rem;
+  color: var(--fg);
+}
+
+.spaced-letters .dim { color: var(--dimmer); }
+
+/* --- what is cairn --- */
+.what-is {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.what-is .analogy {
+  font-family: var(--mono);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--dim);
+  line-height: 2;
+  margin: 3rem 0;
+  text-align: left;
+  border-left: 2px solid var(--dimmer);
+  padding-left: 2rem;
+}
+
+.what-is .analogy .hl { color: var(--fg); }
+
+/* --- stone canvas --- */
+.stone-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stone-canvas {
+  width: 100%;
+  max-width: 600px;
+  height: 300px;
+  margin: 2rem 0;
+}
+
+/* --- features --- */
+.features {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.feature-card {
+  border: 1px solid #1a1a1a;
+  padding: 2rem;
+  border-radius: 6px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 0; height: 1px;
+  background: var(--accent);
+  transition: width 0.5s;
+}
+
+.feature-card:hover {
+  border-color: #333;
+  background: #0d0d0d;
+}
+
+.feature-card:hover::before { width: 100%; }
+
+.feature-card .num {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dimmer);
+  margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  letter-spacing: -0.02em;
+}
+
+.feature-card p {
+  font-size: 0.9rem;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+/* --- terminal demo --- */
+.terminal {
+  max-width: 700px;
+  margin: 3rem auto 0;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: var(--mono);
+}
+
+.terminal-header {
+  background: #111;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.terminal-header .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #333;
+}
+
+.terminal-header .title {
+  font-size: 0.75rem;
+  color: var(--dimmer);
+  margin-left: 0.5rem;
+}
+
+.terminal-body {
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  min-height: 280px;
+}
+
+.terminal-body .prompt { color: var(--dimmer); }
+.terminal-body .cmd { color: var(--fg); }
+.terminal-body .output { color: var(--accent); }
+.terminal-body .cursor {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--fg);
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* --- stats --- */
+.stats-section {
+  text-align: center;
+}
+
+.stats-grid {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  flex-wrap: wrap;
+  margin-top: 4rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat .num {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.stat .label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+/* --- architecture --- */
+.arch-section {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.arch-diagram {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--dim);
+  white-space: pre;
+  overflow-x: auto;
+  margin-top: 3rem;
+  padding: 2rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  background: #080808;
+}
+
+.arch-diagram .hl { color: var(--fg); }
+.arch-diagram .dim { color: var(--dimmer); }
+
+/* --- comparison --- */
+.compare-section {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.compare-list {
+  margin-top: 3rem;
+}
+
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid #111;
+}
+
+.compare-row .other {
+  font-size: 0.9rem;
+  color: var(--dim);
+  text-align: right;
+  padding-right: 1.5rem;
+}
+
+.compare-row .vs {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dimmer);
+}
+
+.compare-row .ours {
+  font-size: 0.9rem;
+  color: var(--fg);
+  padding-left: 1.5rem;
+}
+
+.compare-row .strike {
+  text-decoration: line-through;
+  text-decoration-color: #444;
+}
+
+/* --- install --- */
+.install-section {
+  text-align: center;
+}
+
+.install-cmd {
+  font-family: var(--mono);
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  background: #111;
+  padding: 1rem 2rem;
+  border-radius: 6px;
+  border: 1px solid #1a1a1a;
+  display: inline-block;
+  margin-top: 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.install-cmd:hover {
+  border-color: #333;
+  background: #161616;
+}
+
+.install-cmd .prefix { color: var(--dimmer); }
+.install-cmd .cmd-text { color: var(--fg); }
+
+.install-cmd .copied {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.install-cmd .copied.show { opacity: 1; }
+
+/* --- footer --- */
+footer {
+  padding: 4rem 2rem 2rem;
+  text-align: center;
+  border-top: 1px solid #1a1a1a;
+}
+
+footer .logo {
+  font-family: var(--mono);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+footer .logo span { color: var(--dim); }
+
+footer p {
+  font-size: 0.85rem;
+  color: var(--dim);
+  margin-bottom: 2rem;
+}
+
+footer .links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+footer .links a {
+  color: var(--dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+footer .links a:hover { color: var(--fg); }
+
+footer .copyright {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dimmer);
+  margin-top: 3rem;
+  letter-spacing: 0.1em;
+}
+
+/* --- fade-in on scroll --- */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- mobile --- */
+@media (max-width: 640px) {
+  nav { padding: 1rem; }
+  nav .links { gap: 1rem; }
+  nav a { font-size: 0.75rem; }
+  section { padding: 5rem 1.5rem; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .stats-grid { gap: 2rem; }
+  .compare-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  .compare-row .other { text-align: left; padding-right: 0; }
+  .compare-row .vs { display: none; }
+  .compare-row .ours { padding-left: 0; }
+  .arch-diagram { font-size: 0.65rem; }
 }
 </style>
 </head>
 <body>
 
+<div class="noise"></div>
+
 <!-- NAV -->
 <nav>
-<div class="wrap">
-<div class="nav-left">
-<div class="nav-brand">cairn</div>
-<ul class="nav-links">
-<li><a href="#features">Features</a></li>
-<li><a href="https://github.com/valtors/cairn/blob/main/SPEC.md">Docs</a></li>
-<li><a href="#">Pricing</a></li>
-<li><a href="https://github.com/valtors/cairn">GitHub</a></li>
-</ul>
-</div>
-<div class="nav-right">
-<a href="https://github.com/valtors/cairn" class="btn-star">
-<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 5.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
-Star on GitHub
-</a>
-</div>
-</div>
+  <div class="logo">cairn<span>.</span></div>
+  <div class="links">
+    <a href="#what">what</a>
+    <a href="#features">features</a>
+    <a href="#install">install</a>
+    <a href="https://github.com/valtors/cairn" class="star-btn">star on github</a>
+  </div>
 </nav>
 
 <!-- HERO -->
-<section class="hero">
-<div class="hero-inner">
-<div class="wrap">
-<div class="hero-left">
-<div class="hero-eyebrow">agent wayfinding / open source / MIT</div>
-<h1>your agent <em>remembers.</em></h1>
-<p class="hero-sub">cairn gives agents persistent memory, not vector embeddings, real chunks of real facts with confidence scores, timestamps, and decay.</p>
-<div class="cta-group">
-<button class="btn-primary">$ cargo install cairn</button>
-<a href="https://github.com/valtors/cairn" class="btn-secondary">View Docs &rarr;</a>
+<div class="hero">
+  <pre>
+         .
+        .:.
+       .:::.
+      .:::::.
+     .:::::::.
+    .:::::::::.
+   .:::::::::::.
+  .:::::::::::::.
+ .:::::::::::::::.
+.:::::::::::::::::.
+  .:::::::::::::.
+   .:::::::::::.
+    .:::::::::.
+     .:::::::.
+      .:::::.
+       .:::.
+        .:.
+         .
+  </pre>
+  <div class="hero-text">
+    <h1>your agent remembers<span class="period">.</span></h1>
+    <p>not vector embeddings. not a cloud service. real <em>facts</em> with confidence scores, timestamps, and decay. one sqlite file. one binary. zero dependencies.</p>
+    <div class="hero-buttons">
+      <a href="#install" class="btn btn-primary">$ cargo install cairn</a>
+      <a href="https://github.com/valtors/cairn" class="btn btn-ghost">read the source</a>
+    </div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
 </div>
-<p class="hero-badge">open source / 8.5k+ stars on GitHub</p>
-</div>
-<div class="hero-right">
-<div class="illustration">
-<svg viewBox="0 0 380 320" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<filter id="rough">
-<feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="3"/>
-<feDisplacementMap in="SourceGraphic" scale="1.8"/>
-</filter>
-</defs>
-<g filter="url(#rough)" fill="none" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
-<line x1="20" y1="292" x2="360" y2="292" stroke-width="1" opacity=".25"/>
-<line x1="80" y1="242" x2="320" y2="242" stroke-width="2"/>
-<line x1="85" y1="242" x2="85" y2="292" stroke-width="1.5"/>
-<line x1="315" y1="242" x2="315" y2="292" stroke-width="1.5"/>
-<path d="M150,135 L150,222 L282,222 L282,135 Z" stroke-width="1.5"/>
-<path d="M160,145 L160,212 L272,212 L272,145 Z" stroke-width="1" fill="#f7f7f7"/>
-<line x1="168" y1="153" x2="255" y2="153" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="161" x2="240" y2="161" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="169" x2="252" y2="169" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="177" x2="230" y2="177" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="185" x2="245" y2="185" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="193" x2="225" y2="193" stroke-width=".8" opacity=".35"/>
-<line x1="168" y1="201" x2="238" y2="201" stroke-width=".8" opacity=".35"/>
-<line x1="160" y1="128" x2="175" y2="128" stroke-width=".8"/>
-<line x1="180" y1="128" x2="195" y2="128" stroke-width=".8"/>
-<line x1="200" y1="128" x2="215" y2="128" stroke-width=".8"/>
-<path d="M198,222 L198,238 L232,238 L232,222" stroke-width="1.5"/>
-<line x1="193" y1="242" x2="237" y2="242" stroke-width="2"/>
-<rect x="290" y="217" width="26" height="25" stroke-width="1.2"/>
-<rect x="153" y="234" width="50" height="6" rx="1" stroke-width="1"/>
-<path d="M58,252 L58,165 Q58,155 68,155 L76,155" stroke-width="1.5"/>
-<line x1="58" y1="252" x2="112" y2="252" stroke-width="1.5"/>
-<line x1="63" y1="252" x2="63" y2="292" stroke-width="1.2"/>
-<ellipse cx="96" cy="182" rx="16" ry="18" stroke-width="1.5"/>
-<path d="M80,177 Q82,162 96,164 Q109,166 112,177" stroke-width="1.5"/>
-<path d="M79,180 Q76,172 78,167" stroke-width="1"/>
-<path d="M109,182 Q113,184 111,190" stroke-width="1"/>
-<line x1="96" y1="200" x2="96" y2="210" stroke-width="1.2"/>
-<path d="M96,210 Q89,217 83,232 Q81,242 83,252" stroke-width="1.5"/>
-<path d="M96,210 Q103,217 109,232 Q111,242 109,252" stroke-width="1.5"/>
-<path d="M101,217 Q116,227 131,234 L156,237" stroke-width="1.5"/>
-<path d="M156,237 Q159,235 161,237" stroke-width="1.2"/>
-<path d="M308,256 L303,276 L335,276 L330,256 Z" stroke-width="1.5"/>
-<line x1="306" y1="256" x2="332" y2="256" stroke-width="1.5"/>
-<line x1="309" y1="259" x2="329" y2="259" stroke-width=".8" opacity=".35"/>
-<path d="M320,256 Q318,240 314,224" stroke-width="1.2"/>
-<path d="M320,256 Q323,236 327,220" stroke-width="1.2"/>
-<path d="M320,256 Q320,230 318,214" stroke-width="1.2"/>
-<ellipse cx="313" cy="221" rx="6" ry="3" transform="rotate(-30 313 221)" stroke-width="1"/>
-<ellipse cx="328" cy="218" rx="6" ry="3" transform="rotate(30 328 218)" stroke-width="1"/>
-<ellipse cx="318" cy="211" rx="5" ry="3" transform="rotate(-10 318 211)" stroke-width="1"/>
-<path d="M118,232 L118,244 Q118,247 121,247 L132,247 Q135,247 135,244 L135,232 Z" stroke-width="1.2"/>
-<path d="M135,234 Q141,234 141,238 Q141,242 135,240" stroke-width="1"/>
-<path d="M124,228 Q122,222 125,218 Q128,214 126,210" stroke-width=".8" opacity=".5"/>
-<path d="M129,228 Q127,222 130,218 Q133,214 131,210" stroke-width=".8" opacity=".5"/>
-</g>
-<text x="293" y="232" font-family="'JetBrains Mono',monospace" font-size="6.5" fill="#1a1a1a">cairn</text>
-</svg>
-</div>
-<div class="terminal">
-<div class="terminal-bar">
-<span class="term-dot"></span>
-<span class="term-dot"></span>
-<span class="term-dot"></span>
-<span class="term-title">cairn --stdio</span>
-</div>
-<div class="terminal-body">
-<div class="term-line"><span class="term-prompt">$</span>cairn remember "david prefers short updates in the morning"</div>
-<div class="term-out">&gt; stored.</div>
-<div class="term-line"><span class="term-prompt">$</span>cairn recall "david preferences"</div>
-<div class="term-out">&gt; 3 facts found (0.32ms)</div>
-<div class="term-line"><span class="term-prompt">$</span><span class="term-cursor"></span></div>
-</div>
-</div>
-</div>
-</div>
-</div>
+
+<!-- WHAT IS CAIRN -->
+<section id="what" class="fade-in">
+  <div class="what-is">
+    <div class="section-label">what this is</div>
+    <div class="spaced-letters">A P I L E O F <span class="dim">S T O N E S</span></div>
+    <div class="analogy">
+      <span class="hl">a cairn is a pile of stones hikers stack to mark a path.</span><br><br>
+      agents leave cairns to mark what they learned and where they've been.<br>
+      each fact is a stone. the pile is the path.<br><br>
+      MCP gave agents tools. cairn gives them a path.
+    </div>
+  </div>
 </section>
 
-<!-- TRUST BAR -->
-<section class="trust">
-<div class="wrap">
-<span class="trust-label">trusted by builders</span>
-<div class="trust-logos">
-<span class="trust-logo">Linear</span>
-<span class="trust-logo">Vercel</span>
-<span class="trust-logo">Replicate</span>
-<span class="trust-logo">Supabase</span>
-<span class="trust-logo">Raycast</span>
-</div>
-</div>
+<!-- STONE ANIMATION -->
+<section class="fade-in" style="padding: 4rem 2rem;">
+  <div class="stone-section">
+    <canvas class="stone-canvas" id="stoneCanvas"></canvas>
+    <p style="font-family: var(--mono); font-size: 0.75rem; color: var(--dimmer); letter-spacing: 0.2em; margin-top: 1rem;">FACTS ACCUMULATE. MEMORY FORMS.</p>
+  </div>
 </section>
 
-<!-- DASHBOARD -->
-<section class="dashboard" id="features">
-<div class="wrap">
-<div class="card">
-<div class="card-header">
-<span class="card-title">MEMORY OVERVIEW</span>
-<span class="live-dot">live</span>
-</div>
-<div class="metrics-grid">
-<div class="metric">
-<span class="metric-label">FACTS RECALLED</span>
-<span class="metric-value">312</span>
-<span class="metric-delta">+12.5%</span>
-</div>
-<div class="metric">
-<span class="metric-label">AVG READ SPEED</span>
-<span class="metric-value">0.3<span style="font-size:16px;color:var(--g400)">ms</span></span>
-<span class="metric-delta">sqlite indexed</span>
-</div>
-<div class="metric">
-<span class="metric-label">CHUNKS STORED</span>
-<span class="metric-value">12<span style="font-size:16px;color:var(--g400)">K+</span></span>
-<span class="metric-delta">across 4 agents</span>
-</div>
-<div class="metric">
-<span class="metric-label">INTEGRATIONS</span>
-<span class="metric-value">4</span>
-<span class="metric-delta">mcp / stdio / http / cli</span>
-</div>
-</div>
-<div class="bar-chart">
-<div class="bar" style="height:35%"></div>
-<div class="bar" style="height:55%"></div>
-<div class="bar" style="height:28%"></div>
-<div class="bar" style="height:72%"></div>
-<div class="bar active" style="height:45%"></div>
-<div class="bar" style="height:88%"></div>
-<div class="bar" style="height:60%"></div>
-<div class="bar" style="height:38%"></div>
-<div class="bar" style="height:52%"></div>
-<div class="bar" style="height:78%"></div>
-<div class="bar" style="height:42%"></div>
-<div class="bar" style="height:65%"></div>
-</div>
-</div>
-<div class="card">
-<div class="card-header">
-<span class="card-title">RECENT FACTS</span>
-<a href="#" class="card-link">View all &rarr;</a>
-</div>
-<ul class="fact-list">
-<li class="fact-item">
-<span class="fact-text"><span class="fact-dot"></span>David prefers short updates in the morning</span>
-<span class="fact-time">1m ago</span>
-</li>
-<li class="fact-item">
-<span class="fact-text"><span class="fact-dot"></span>Using Postgres for analytics events</span>
-<span class="fact-time">4m ago</span>
-</li>
-<li class="fact-item">
-<span class="fact-text"><span class="fact-dot"></span>Dev meeting on Dec 10 at 10:00 AM</span>
-<span class="fact-time">1h ago</span>
-</li>
-<li class="fact-item">
-<span class="fact-text"><span class="fact-dot"></span>API rate limit increased to 1000 rpm</span>
-<span class="fact-time">3h ago</span>
-</li>
-<li class="fact-item">
-<span class="fact-text"><span class="fact-dot"></span>Customer onboarding flow v2 finalized</span>
-<span class="fact-time">5h ago</span>
-</li>
-</ul>
-</div>
-</div>
+<!-- FEATURES -->
+<section id="features" class="fade-in">
+  <div class="features">
+    <div class="section-label">five things cairn does that nobody else does together</div>
+    <div class="spaced-letters">N O T <span class="dim">M E M O R Y</span> . <span class="dim">W A Y F I N D I N G</span> .</div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="num">01</div>
+        <h3>bi-temporal tracking</h3>
+        <p>every fact carries two timestamps: when it was true in the world, and when the system learned it. contradicted facts get closed, not deleted. all in sqlite.</p>
+      </div>
+      <div class="feature-card">
+        <div class="num">02</div>
+        <h3>extraction without LLM calls</h3>
+        <p>the agent calls remember() as an MCP tool during its normal response. no separate extraction pipeline. a pattern-based post-turn hook catches 80% of facts for free.</p>
+      </div>
+      <div class="feature-card">
+        <div class="num">03</div>
+        <h3>forgetting is first-class</h3>
+        <p>facts decay by confidence, access frequency, and age. stale facts get tombstoned (soft delete with reason). forgetting is auditable. memory gets better over time, not just bigger.</p>
+      </div>
+      <div class="feature-card">
+        <div class="num">04</div>
+        <h3>federated sync</h3>
+        <p>your phone agent and laptop agent share a brain. peer-to-peer sync via vector clocks. conflict resolution is deterministic. no server required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="num">05</div>
+        <h3>query by meaning</h3>
+        <p>the agent says recall("what do you know about tamish's setup") and gets back a subgraph. no cypher, no SQL. semantic similarity finds entry points, graph traversal follows relationships.</p>
+      </div>
+      <div class="feature-card">
+        <div class="num">06</div>
+        <h3>one file. one binary.</h3>
+        <p>no neo4j. no postgres. no redis. no docker. no cloud. one sqlite file you can copy, backup, or delete. one rust binary that runs anywhere. zero external services.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- MID TEXT: memory that works like memory -->
-<section class="midtext">
-<div class="wrap">
-<h2>memory that works like <em>memory</em></h2>
-<p>cairn stores facts the way your brain does. with context, confidence, and decay.</p>
-</div>
+<!-- TERMINAL DEMO -->
+<section class="fade-in">
+  <div class="what-is">
+    <div class="section-label">see it work</div>
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="title">cairn</div>
+      </div>
+      <div class="terminal-body" id="terminal">
+        <span class="prompt">$ </span><span class="cmd">cairn remember --subject tamish --predicate uses_os --object linux</span><br>
+        <span class="output">stored: tamish --uses_os--> linux (valid: now)</span><br>
+        <span class="output">closed: tamish --uses_os--> macos (was valid: 2024-01-01 to 2025-07-15)</span><br><br>
+        <span class="prompt">$ </span><span class="cmd">cairn recall "what os does tamish use"</span><br>
+        <span class="output">tamish --uses_os--> linux (confidence: 1.0, learned: 2025-07-15)</span><br>
+        <span class="output">tamish --uses_os--> macos (closed, superseded, learned: 2024-01-01)</span><br><br>
+        <span class="prompt">$ </span><span class="cmd">cairn forget --older-than 30d --confidence-below 0.3</span><br>
+        <span class="output">tombstoned 47 facts (reason: stale, low confidence)</span><br><br>
+        <span class="prompt">$ </span><span class="cmd">cairn export > my-memory.json</span><br>
+        <span class="output">exported 312 facts, 89 relationships</span><br><br>
+        <span class="prompt">$ </span><span class="cursor"></span>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- FEATURES: not chunks. facts. -->
-<section class="features">
-<div class="section-head">
-<h2>not chunks. <em>facts.</em></h2>
-<p>cairn doesn't guess. it remembers what's true.</p>
-</div>
-<div class="feature-row">
-<div class="feature-box">
-<div class="feature-icon">000</div>
-<div class="feature-title">Bi-temporal storage</div>
-<div class="feature-desc">store facts with valid time and system time.</div>
-<span class="feature-tag">valid time + system time</span>
-</div>
-<div class="feature-box">
-<div class="feature-icon">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1a1a1a" stroke-width="1"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><line x1="5" y1="5" x2="7" y2="11"/><line x1="11" y1="5" x2="9" y2="11"/><line x1="6" y1="4" x2="10" y2="4"/></svg>
-</div>
-<div class="feature-title">Graph traversal</div>
-<div class="feature-desc">connect facts and traverse relationships.</div>
-<span class="feature-tag">fact + fact = insight</span>
-</div>
-<div class="feature-box">
-<div class="feature-icon">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1a1a1a" stroke-width="1"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="5" y1="9" x2="11" y2="9"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
-</div>
-<div class="feature-title">Zero-config</div>
-<div class="feature-desc">one line, no servers. no setup. just memory.</div>
-<span class="feature-tag dark">$ cargo install cairn</span>
-</div>
-</div>
+<!-- STATS -->
+<section class="fade-in stats-section">
+  <div class="section-label">the numbers</div>
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="num" data-target="7">0</div>
+      <div class="label">CRATES</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-target="1">0</div>
+      <div class="label">SQLITE FILE</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-target="0">0</div>
+      <div class="label">DEPENDENCIES</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-target="3">0</div>
+      <div class="label">COMMANDS</div>
+    </div>
+  </div>
 </section>
 
-<!-- DEEP DIVE -->
-<section class="deepdive">
-<div class="dd-row">
-<div class="dd-box">
-<div class="dd-title">FACTS HAVE MEMORY</div>
-<ul class="dd-table">
-<li><span class="dd-key">user: damir</span><span class="dd-time">2h ago</span></li>
-<li><span class="dd-key">email: damir@juice.com</span><span class="dd-time">2h ago</span></li>
-<li><span class="dd-key">plan: pro</span><span class="dd-time">1d ago</span></li>
-<li><span class="dd-key">team: juice devs</span><span class="dd-time">1d ago</span></li>
-<li><span class="dd-key">theme: dark</span><span class="dd-time">2d ago</span></li>
-</ul>
-<div class="dd-foot">time leads to truth</div>
-</div>
-<div class="dd-box">
-<div class="dd-title">STATE FACTS FADE</div>
-<ul class="dd-table">
-<li><span class="dd-key">plan: pro</span><span class="dd-time">conf 0.92</span></li>
-<li><span class="dd-key">plan: regular</span><span class="dd-time">conf 0.43</span></li>
-<li><span class="dd-key">plan: free</span><span class="dd-time">conf 0.12</span></li>
-<li><span class="dd-key">plan: no</span><span class="dd-time">conf 0.03</span></li>
-</ul>
-<div class="dd-foot">confidence decays</div>
-</div>
-<div class="dd-box">
-<div class="dd-title">ZERO-LLM EXTRACTION</div>
-<div class="dd-code">
-<span class="k">plan:</span> <span class="v">"pro"</span><br>
-<span class="k">team:</span> <span class="v">"juice devs"</span><br>
-<span class="k">email:</span> <span class="v">"damir@juice.com"</span>
-</div>
-<div class="donut-wrap">
-<div class="donut">
-<svg width="100" height="100" viewBox="0 0 100 100">
-<circle cx="50" cy="50" r="40" fill="none" stroke="#e5e5e5" stroke-width="8"/>
-<circle cx="50" cy="50" r="40" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-dasharray="195.8 251.2" stroke-linecap="round"/>
-</svg>
-<div class="donut-center">78%</div>
-</div>
-<div class="donut-legend">
-<div class="legend-item"><span class="legend-dot fresh"></span>fresh</div>
-<div class="legend-item"><span class="legend-dot decaying"></span>decaying</div>
-<div class="legend-item"><span class="legend-dot stale"></span>stale</div>
-</div>
-</div>
-<div class="dd-foot">like milk. but. smart.</div>
-</div>
-</div>
+<!-- ARCHITECTURE -->
+<section class="fade-in arch-section">
+  <div class="section-label">architecture</div>
+  <div class="spaced-letters" style="font-size: clamp(1rem, 3vw, 2rem);">S E V E N <span class="dim">C R A T E S</span> . <span class="dim">O N E</span> B I N A R Y .</div>
+  <div class="arch-diagram"><span class="dim">cairn/</span>
+  <span class="dim">  crates/</span>
+    <span class="hl">store/</span>        <span class="dim">temporal sqlite engine, validity windows, conflict resolution</span>
+    <span class="hl">traverse/</span>     <span class="dim">graph traversal, depth-limited</span>
+    <span class="hl">forget/</span>       <span class="dim">decay scoring, garbage collection, tombstones</span>
+    <span class="hl">query/</span>        <span class="dim">semantic entry points + traversal + ranking</span>
+    <span class="hl">extract/</span>      <span class="dim">pattern-based fact extraction (no LLM)</span>
+    <span class="hl">sync/</span>         <span class="dim">vector clocks, peer sync, conflict resolution</span>
+    <span class="hl">mcp/</span>          <span class="dim">MCP server exposing remember/recall/forget/export</span>
+  <span class="dim">  bin/</span>
+    <span class="hl">cairn/</span>        <span class="dim">CLI + MCP server entry point</span>
+
+<span class="dim">one sqlite file. one binary. zero external services.</span></div>
 </section>
 
-<!-- COMMANDS -->
-<section class="commands">
-<div class="wrap">
-<div class="section-head">
-<h2>three commands. <em>that's it.</em></h2>
-<p>no config files. no json editing. no api keys. remember, recall, forget.</p>
-</div>
-<div class="cmd-row">
-<div class="cmd-box">
-<div class="cmd-num">1</div>
-<div class="cmd-title">remember</div>
-<div class="cmd-desc">save a fact to memory.</div>
-<div class="cmd-code">$ cairn remember "fact"</div>
-</div>
-<div class="cmd-box">
-<div class="cmd-num">2</div>
-<div class="cmd-title">recall</div>
-<div class="cmd-desc">find facts in memory.</div>
-<div class="cmd-code">$ cairn recall "query"</div>
-</div>
-<div class="cmd-box">
-<div class="cmd-num">3</div>
-<div class="cmd-title">forget</div>
-<div class="cmd-desc">remove a fact.</div>
-<div class="cmd-code">$ cairn forget "fact"</div>
-</div>
-</div>
-</div>
+<!-- COMPARISON -->
+<section class="fade-in compare-section">
+  <div class="section-label">why not the others</div>
+  <div class="spaced-letters" style="font-size: clamp(1rem, 3vw, 2rem);">N O <span class="dim">W A L L E D</span> G A R D E N S .</div>
+  <div class="compare-list">
+    <div class="compare-row">
+      <div class="other strike">neo4j requires a running server</div>
+      <div class="vs">vs</div>
+      <div class="ours">one sqlite file, copy it wherever</div>
+    </div>
+    <div class="compare-row">
+      <div class="other strike">mem0 locks you into their cloud</div>
+      <div class="vs">vs</div>
+      <div class="ours">self-hosted, your data stays on your machine</div>
+    </div>
+    <div class="compare-row">
+      <div class="other strike">zep needs postgres + docker</div>
+      <div class="vs">vs</div>
+      <div class="ours">one rust binary, zero runtime deps</div>
+    </div>
+    <div class="compare-row">
+      <div class="other strike">chromadb is a vector db, not memory</div>
+      <div class="vs">vs</div>
+      <div class="ours">temporal facts with decay, not just embeddings</div>
+    </div>
+    <div class="compare-row">
+      <div class="other strike">langchain memory is ephemeral</div>
+      <div class="vs">vs</div>
+      <div class="ours">persistent, federated, auditable</div>
+    </div>
+  </div>
 </section>
 
-<!-- CTA BAR -->
-<section class="cta-bar">
-<div class="wrap">
-<div class="cta-text">stop building agents that <em>forget.</em> give them memory.</div>
-<div class="cta-btns">
-<button class="cta-dark">$ cargo install cairn</button>
-<a href="https://github.com/valtors/cairn" class="cta-light">Read Docs &rarr;</a>
-</div>
-</div>
+<!-- INSTALL -->
+<section id="install" class="fade-in install-section">
+  <div class="section-label">install</div>
+  <div class="spaced-letters" style="font-size: clamp(1.2rem, 3.5vw, 2.5rem);">T H R E E <span class="dim">C O M M A N D S</span> . <span class="dim">T H A T ' S</span> I T .</div>
+
+  <div class="install-cmd" onclick="copyCmd(this)">
+    <div class="copied">copied to clipboard</div>
+    <span class="prefix">$ </span><span class="cmd-text">cargo install cairn</span>
+  </div>
+
+  <div style="margin-top: 3rem; font-family: var(--mono); font-size: 0.85rem; color: var(--dim); line-height: 2; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+    <div><span style="color:var(--dimmer)">#</span> run as MCP server</div>
+    <div><span style="color:var(--fg)">cairn serve</span></div>
+    <br>
+    <div><span style="color:var(--dimmer)">#</span> or use directly</div>
+    <div><span style="color:var(--fg)">cairn remember</span> <span style="color:var(--dim)">--subject tamish --predicate uses_os --object linux</span></div>
+    <div><span style="color:var(--fg)">cairn recall</span> <span style="color:var(--dim)">"what os does tamish use"</span></div>
+    <div><span style="color:var(--fg)">cairn forget</span> <span style="color:var(--dim)">--older-than 30d</span></div>
+  </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-<div class="wrap">
-<div>
-<div class="foot-brand">cairn</div>
-<p class="foot-tag">the system of record for ai agents. open source. built for builders.</p>
-</div>
-<div class="foot-col">
-<h4>PRODUCT</h4>
-<ul>
-<li><a href="#features">Features</a></li>
-<li><a href="#">Pricing</a></li>
-<li><a href="https://github.com/valtors/cairn/blob/main/SPEC.md">Docs</a></li>
-<li><a href="https://github.com/valtors/cairn/blob/main/SPEC.md">API Reference</a></li>
-</ul>
-</div>
-<div class="foot-col">
-<h4>RESOURCES</h4>
-<ul>
-<li><a href="https://github.com/valtors/cairn">GitHub</a></li>
-<li><a href="#">Blog</a></li>
-<li><a href="https://github.com/valtors/cairn/releases">Changelog</a></li>
-<li><a href="https://github.com/valtors/cairn/issues">Community</a></li>
-</ul>
-</div>
-<div class="foot-col">
-<h4>COMPANY</h4>
-<ul>
-<li><a href="https://github.com/valtors">About</a></li>
-<li><a href="#">Privacy</a></li>
-<li><a href="#">Terms</a></li>
-<li><a href="https://github.com/valtors">Contact</a></li>
-</ul>
-</div>
-</div>
-<div class="foot-bottom">
-<p>built with care by valtors.</p>
-<p>2026 valtors. MIT License. all rights reserved.</p>
-</div>
+  <div class="logo">cairn<span>.</span></div>
+  <p>agent wayfinding. open source. built for builders.</p>
+  <div class="links">
+    <a href="https://github.com/valtors/cairn">github</a>
+    <a href="https://github.com/valtors/cairn/blob/main/SPEC.md">spec</a>
+    <a href="https://github.com/valtors/cairn/blob/main/README.md">readme</a>
+    <a href="https://github.com/valtors/cairn/issues">issues</a>
+  </div>
+  <div class="copyright">MIT. STRICTLY OPEN SOURCE. NO CLOUD TIER. NO ENTERPRISE PLAN. NO PROPRIETARY FORK.</div>
 </footer>
 
 <script>
-document.querySelectorAll('[data-count]').forEach(function(el){
-var target=parseInt(el.getAttribute('data-count'));
-var current=0;var step=target/40;
-var timer=setInterval(function(){
-current+=step;
-if(current>=target){current=target;clearInterval(timer)}
-el.textContent=Math.floor(current);
-},25);
-});
+// --- fade in on scroll ---
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// --- copy command ---
+function copyCmd(el) {
+  const text = el.querySelector('.cmd-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const copied = el.querySelector('.copied');
+    copied.classList.add('show');
+    setTimeout(() => copied.classList.remove('show'), 1500);
+  });
+}
+
+// --- count up stats ---
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target;
+    const target = parseInt(el.dataset.target);
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 30));
+    const tick = setInterval(() => {
+      current += step;
+      if (current >= target) { current = target; clearInterval(tick); }
+      el.textContent = current;
+    }, 40);
+    statObserver.unobserve(el);
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stat .num').forEach(el => statObserver.observe(el));
+
+// --- stone canvas animation ---
+const canvas = document.getElementById('stoneCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const stones = [];
+let stoneInterval = 0;
+
+function addStone() {
+  const x = canvas.width / 2 + (Math.random() - 0.5) * 80;
+  const y = canvas.height - 10;
+  stones.push({
+    x: x,
+    y: y,
+    vy: 0,
+    vx: (Math.random() - 0.5) * 0.5,
+    size: 6 + Math.random() * 8,
+    rotation: Math.random() * Math.PI,
+    settled: false,
+    opacity: 0.6 + Math.random() * 0.4
+  });
+}
+
+function drawStones() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // draw pile base
+  ctx.fillStyle = 'rgba(40,40,40,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(canvas.width / 2, canvas.height - 5, 60, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  stones.forEach(s => {
+    if (!s.settled) {
+      s.vy += 0.3;
+      s.y -= s.vy;
+      s.x += s.vx;
+
+      // check collision with pile height
+      const pileHeight = stones.filter(o => o.settled && Math.abs(o.x - s.x) < s.size).length;
+      const groundY = canvas.height - 10 - (pileHeight * s.size * 0.7);
+
+      if (s.y <= groundY || s.vy <= 0) {
+        // bounce a bit then settle
+        if (Math.abs(s.vy) < 1) {
+          s.settled = true;
+          s.y = groundY;
+        } else {
+          s.vy = -s.vy * 0.3;
+        }
+      }
+    }
+
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.rotation);
+    ctx.fillStyle = `rgba(${120 + Math.random()*40}, ${120 + Math.random()*40}, ${120 + Math.random()*40}, ${s.opacity})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, s.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // limit stones
+  if (stones.length > 40) {
+    stones.shift();
+  }
+
+  stoneInterval++;
+  if (stoneInterval > 25 && stones.length < 40) {
+    addStone();
+    stoneInterval = 0;
+  }
+
+  requestAnimationFrame(drawStones);
+}
+
+// start after page load
+setTimeout(() => {
+  for (let i = 0; i < 3; i++) addStone();
+  drawStones();
+}, 500);
+
+// --- terminal typewriter effect ---
+const terminalLines = document.querySelectorAll('#terminal > *');
+// already visible by default, but add a subtle reveal
 </script>
+
 </body>
 </html>
