@@ -3,7 +3,6 @@ use cairn_forget::{run as run_forget, ForgetOptions};
 use cairn_query::{query, QueryOptions};
 use cairn_store::{RememberOptions, Store};
 use cairn_sync::{export_bundle, import_bundle};
-use serde_json::json;
 
 fn tmp_store() -> Store {
     let path = format!("/home/container/cairn-test-{}.db", std::process::id());
