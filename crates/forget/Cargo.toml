@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 cairn-store = { path = "../store" }
 chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

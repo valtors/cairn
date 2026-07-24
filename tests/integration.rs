@@ -5,8 +5,10 @@ use cairn_store::{RememberOptions, Store};
 use cairn_sync::{export_bundle, import_bundle};
 
 fn tmp_store() -> Store {
-    let path = format!("/tmp/cairn-test-{}.db", std::process::id());
-    let _ = std::fs::remove_file(&path);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("memory.db");
+    let path = path.to_str().unwrap().to_string();
+    std::mem::forget(dir);
     Store::open(&path, Some("test-device".to_string())).unwrap()
 }
 

@@ -10,3 +10,6 @@ serde_json = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 hostname = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
