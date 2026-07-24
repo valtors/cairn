@@ -1,5 +1,8 @@
 # cairn
 
+[![CI](https://github.com/valtors/cairn/actions/workflows/ci.yml/badge.svg)](https://github.com/valtors/cairn/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0F172A?style=flat-square)](./LICENSE)
+
 agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
 
 ## what
