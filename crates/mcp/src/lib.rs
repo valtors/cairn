@@ -14,9 +14,18 @@ use cairn_store::{RememberOptions, Store};
 use serde_json::{json, Value};
 
 pub fn handle_remember(store: &Store, args: &Value) -> Result<Value, String> {
-    let subject = args.get("subject").and_then(|v| v.as_str()).ok_or("missing subject")?;
-    let predicate = args.get("predicate").and_then(|v| v.as_str()).ok_or("missing predicate")?;
-    let object = args.get("object").and_then(|v| v.as_str()).ok_or("missing object")?;
+    let subject = args
+        .get("subject")
+        .and_then(|v| v.as_str())
+        .ok_or("missing subject")?;
+    let predicate = args
+        .get("predicate")
+        .and_then(|v| v.as_str())
+        .ok_or("missing predicate")?;
+    let object = args
+        .get("object")
+        .and_then(|v| v.as_str())
+        .ok_or("missing object")?;
     let confidence = args.get("confidence").and_then(|v| v.as_f64());
     let source = args.get("source").and_then(|v| v.as_str());
 
@@ -33,11 +42,28 @@ pub fn handle_remember(store: &Store, args: &Value) -> Result<Value, String> {
 }
 
 pub fn handle_recall(store: &Store, args: &Value) -> Result<Value, String> {
-    let query_text = args.get("query").and_then(|v| v.as_str()).ok_or("missing query")?;
-    let depth = args.get("depth").and_then(|v| v.as_u64()).map(|d| d as usize).unwrap_or(2);
-    let limit = args.get("limit").and_then(|v| v.as_u64()).map(|l| l as usize).unwrap_or(50);
-    let as_of = args.get("as_of").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let min_confidence = args.get("min_confidence").and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let query_text = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .ok_or("missing query")?;
+    let depth = args
+        .get("depth")
+        .and_then(|v| v.as_u64())
+        .map(|d| d as usize)
+        .unwrap_or(2);
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_u64())
+        .map(|l| l as usize)
+        .unwrap_or(50);
+    let as_of = args
+        .get("as_of")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let min_confidence = args
+        .get("min_confidence")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
 
     let opts = QueryOptions {
         depth,
@@ -55,7 +81,10 @@ pub fn handle_recall(store: &Store, args: &Value) -> Result<Value, String> {
 
 pub fn handle_forget(store: &Store, args: &Value) -> Result<Value, String> {
     let older_than = args.get("older_than_days").and_then(|v| v.as_i64());
-    let dry_run = args.get("dry_run").and_then(|v| v.as_bool()).unwrap_or(false);
+    let dry_run = args
+        .get("dry_run")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let force = args.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
 
     let opts = ForgetOptions {
@@ -84,7 +113,8 @@ pub fn handle_import(store: &Store, args: &Value) -> Result<Value, String> {
     let fact_arr = facts.as_array().ok_or("facts must be an array")?;
     let mut imported = 0;
     for fact_val in fact_arr {
-        let fact: cairn_store::Fact = serde_json::from_value(fact_val.clone()).map_err(|e| e.to_string())?;
+        let fact: cairn_store::Fact =
+            serde_json::from_value(fact_val.clone()).map_err(|e| e.to_string())?;
         store.import_fact(&fact)?;
         imported += 1;
     }
@@ -92,7 +122,10 @@ pub fn handle_import(store: &Store, args: &Value) -> Result<Value, String> {
 }
 
 pub fn handle_extract(store: &Store, args: &Value) -> Result<Value, String> {
-    let text = args.get("text").and_then(|v| v.as_str()).ok_or("missing text")?;
+    let text = args
+        .get("text")
+        .and_then(|v| v.as_str())
+        .ok_or("missing text")?;
     let user_name = args.get("user_name").and_then(|v| v.as_str());
 
     let extracted = extract_from_text(text, user_name);

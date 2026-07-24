@@ -32,25 +32,13 @@ pub struct Fact {
     pub vector_clock: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RememberOptions {
     pub valid_from: Option<String>,
     pub recorded_at: Option<String>,
     pub confidence: Option<f64>,
     pub source: Option<String>,
     pub device_id: Option<String>,
-}
-
-impl Default for RememberOptions {
-    fn default() -> Self {
-        Self {
-            valid_from: None,
-            recorded_at: None,
-            confidence: None,
-            source: None,
-            device_id: None,
-        }
-    }
 }
 
 pub struct Store {
@@ -332,4 +320,145 @@ fn row_to_fact(row: &rusqlite::Row) -> rusqlite::Result<Fact> {
         device_id: row.get(13)?,
         vector_clock: row.get(14)?,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_store() -> Store {
+        let path = format!(
+            "/home/container/cairn-unit-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+        );
+        let _ = std::fs::remove_file(&path);
+        Store::open(&path, Some("test".to_string())).unwrap()
+    }
+
+    #[test]
+    fn open_creates_schema() {
+        let store = test_store();
+        let facts = store.all_facts().unwrap();
+        assert!(facts.is_empty());
+    }
+
+    #[test]
+    fn remember_returns_id() {
+        let store = test_store();
+        let id = store
+            .remember("s", "p", "o", RememberOptions::default())
+            .unwrap();
+        assert!(!id.is_empty());
+    }
+
+    #[test]
+    fn get_active_facts_for_subject() {
+        let store = test_store();
+        store
+            .remember("tamish", "uses", "linux", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("other", "uses", "macos", RememberOptions::default())
+            .unwrap();
+        let facts = store.get_active_facts_for("tamish").unwrap();
+        assert_eq!(facts.len(), 1);
+        assert_eq!(facts[0].object, "linux");
+    }
+
+    #[test]
+    fn contradiction_closes_old() {
+        let store = test_store();
+        store
+            .remember("s", "p", "old", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("s", "p", "new", RememberOptions::default())
+            .unwrap();
+        let active = store.get_active_facts_for("s").unwrap();
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].object, "new");
+        let all = store.all_facts().unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn same_fact_updates_confidence() {
+        let store = test_store();
+        store
+            .remember(
+                "s",
+                "p",
+                "o",
+                RememberOptions {
+                    confidence: Some(0.5),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        store
+            .remember(
+                "s",
+                "p",
+                "o",
+                RememberOptions {
+                    confidence: Some(1.0),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let active = store.get_active_facts_for("s").unwrap();
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].confidence, 1.0);
+    }
+
+    #[test]
+    fn facts_as_of_point_in_time() {
+        let store = test_store();
+        let old = "2024-01-01T00:00:00Z".to_string();
+        store
+            .remember(
+                "s",
+                "p",
+                "old",
+                RememberOptions {
+                    valid_from: Some(old.clone()),
+                    recorded_at: Some(old),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let facts = store.facts_as_of("2024-06-01T00:00:00Z").unwrap();
+        assert_eq!(facts.len(), 1);
+    }
+
+    #[test]
+    fn get_active_facts_all() {
+        let store = test_store();
+        store
+            .remember("a", "p", "1", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("b", "p", "2", RememberOptions::default())
+            .unwrap();
+        let all = store.get_active_facts().unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn merge_vector_clock_increments() {
+        let store = test_store();
+        store
+            .remember("s", "p", "o", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("s", "p", "o", RememberOptions::default())
+            .unwrap();
+        let facts = store.get_active_facts_for("s").unwrap();
+        let vc: serde_json::Value = serde_json::from_str(&facts[0].vector_clock).unwrap();
+        assert!(vc.get("test").unwrap().as_i64().unwrap() >= 2);
+    }
 }

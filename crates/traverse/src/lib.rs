@@ -102,3 +102,52 @@ fn row_to_fact(row: &rusqlite::Row) -> rusqlite::Result<Fact> {
         vector_clock: row.get(14)?,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cairn_store::{RememberOptions, Store};
+
+    fn test_store() -> Store {
+        let path = format!(
+            "/home/container/cairn-t-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+        );
+        let _ = std::fs::remove_file(&path);
+        Store::open(&path, Some("test".to_string())).unwrap()
+    }
+
+    #[test]
+    fn traverse_finds_connected_facts() {
+        let store = test_store();
+        store
+            .remember("a", "r", "b", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("b", "r", "c", RememberOptions::default())
+            .unwrap();
+        let result = traverse(store.conn(), &["a".to_string()], 2, None).unwrap();
+        assert!(result.facts.len() >= 2);
+    }
+
+    #[test]
+    fn traverse_depth_one() {
+        let store = test_store();
+        store
+            .remember("a", "r", "b", RememberOptions::default())
+            .unwrap();
+        let result = traverse(store.conn(), &["a".to_string()], 1, None).unwrap();
+        assert_eq!(result.facts.len(), 1);
+    }
+
+    #[test]
+    fn traverse_no_match() {
+        let store = test_store();
+        let result = traverse(store.conn(), &["nonexistent".to_string()], 3, None).unwrap();
+        assert!(result.facts.is_empty());
+    }
+}

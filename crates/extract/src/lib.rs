@@ -76,3 +76,95 @@ fn trim_at_stop_words(s: &str, stop_words: &[&str]) -> String {
     }
     words[..end].join(" ")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_name() {
+        let facts = extract_from_text("my name is tamish", Some("user"));
+        assert!(facts
+            .iter()
+            .any(|f| f.predicate == "name" && f.object == "tamish"));
+    }
+
+    #[test]
+    fn extract_uses() {
+        let facts = extract_from_text("i use linux", Some("user"));
+        assert!(facts
+            .iter()
+            .any(|f| f.predicate == "uses" && f.object == "linux"));
+    }
+
+    #[test]
+    fn extract_works_at() {
+        let facts = extract_from_text("i work at valtors", Some("user"));
+        assert!(facts
+            .iter()
+            .any(|f| f.predicate == "works_at" && f.object == "valtors"));
+    }
+
+    #[test]
+    fn extract_lives_in() {
+        let facts = extract_from_text("i live in bangalore", Some("user"));
+        assert!(facts
+            .iter()
+            .any(|f| f.predicate == "lives_in" && f.object == "bangalore"));
+    }
+
+    #[test]
+    fn extract_dislikes() {
+        let facts = extract_from_text("i hate bugs", Some("user"));
+        assert!(facts
+            .iter()
+            .any(|f| f.predicate == "dislikes" && f.object == "bugs"));
+    }
+
+    #[test]
+    fn extract_prefers_lower_confidence() {
+        let facts = extract_from_text("i prefer vim", Some("user"));
+        let pref = facts.iter().find(|f| f.predicate == "prefers");
+        assert!(pref.is_some());
+        assert_eq!(pref.unwrap().confidence, 0.6);
+    }
+
+    #[test]
+    fn extract_default_subject() {
+        let facts = extract_from_text("i use rust", None);
+        assert!(facts.iter().all(|f| f.subject == "user"));
+    }
+
+    #[test]
+    fn extract_empty_text() {
+        let facts = extract_from_text("", Some("user"));
+        assert!(facts.is_empty());
+    }
+
+    #[test]
+    fn extract_no_match() {
+        let facts = extract_from_text("the weather is nice today", Some("user"));
+        assert!(facts.is_empty());
+    }
+
+    #[test]
+    fn trim_at_stop_words_basic() {
+        let result = trim_at_stop_words("linux and windows", &["and", "but", "or"]);
+        assert_eq!(result, "linux");
+    }
+
+    #[test]
+    fn trim_at_stop_words_no_stop() {
+        let result = trim_at_stop_words("rust go", &["and", "but"]);
+        assert_eq!(result, "rust go");
+    }
+
+    #[test]
+    fn extract_multiple_facts() {
+        let facts = extract_from_text(
+            "my name is damir and i use linux and i live in bangalore",
+            Some("user"),
+        );
+        assert!(facts.len() >= 2);
+    }
+}

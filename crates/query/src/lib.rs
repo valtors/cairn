@@ -87,7 +87,11 @@ pub fn query(store: &Store, query_text: &str, opts: QueryOptions) -> Result<Quer
         })
         .collect();
 
-    nodes.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    nodes.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     nodes.truncate(opts.limit);
 
     for node in &nodes {
@@ -161,4 +165,61 @@ fn relevance_score(fact: &Fact, query: &str, entry_points: &[String]) -> f64 {
 
     let confidence = fact.confidence;
     text_score * 0.4 + entry_bonus * 0.3 + confidence * 0.3
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cairn_store::{RememberOptions, Store};
+
+    fn test_store() -> Store {
+        let path = format!(
+            "/home/container/cairn-q-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+        );
+        let _ = std::fs::remove_file(&path);
+        Store::open(&path, Some("test".to_string())).unwrap()
+    }
+
+    #[test]
+    fn query_returns_matching_facts() {
+        let store = test_store();
+        store
+            .remember("tamish", "uses_os", "linux", RememberOptions::default())
+            .unwrap();
+        let result = query(&store, "what os does tamish use", QueryOptions::default()).unwrap();
+        assert!(!result.facts.is_empty());
+    }
+
+    #[test]
+    fn query_empty_store() {
+        let store = test_store();
+        let result = query(&store, "anything", QueryOptions::default()).unwrap();
+        assert!(result.facts.is_empty());
+    }
+
+    #[test]
+    fn query_with_depth_traverses() {
+        let store = test_store();
+        store
+            .remember("a", "r", "b", RememberOptions::default())
+            .unwrap();
+        store
+            .remember("b", "r", "c", RememberOptions::default())
+            .unwrap();
+        let result = query(
+            &store,
+            "a",
+            QueryOptions {
+                depth: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(result.facts.len() >= 2);
+    }
 }

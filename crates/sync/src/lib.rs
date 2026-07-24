@@ -79,10 +79,8 @@ fn resolve_conflict(store: &Store, incoming: &Fact) -> ConflictResolution {
 }
 
 pub fn merge_vector_clocks(a: &str, b: &str) -> String {
-    let mut va: Value =
-        serde_json::from_str(a).unwrap_or_else(|_| serde_json::json!({}));
-    let vb: Value =
-        serde_json::from_str(b).unwrap_or_else(|_| serde_json::json!({}));
+    let mut va: Value = serde_json::from_str(a).unwrap_or_else(|_| serde_json::json!({}));
+    let vb: Value = serde_json::from_str(b).unwrap_or_else(|_| serde_json::json!({}));
 
     if let (Some(obj_a), Some(obj_b)) = (va.as_object_mut(), vb.as_object()) {
         for (key, val_b) in obj_b {
@@ -92,4 +90,45 @@ pub fn merge_vector_clocks(a: &str, b: &str) -> String {
         }
     }
     va.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cairn_store::{RememberOptions, Store};
+
+    fn test_store() -> Store {
+        let path = format!(
+            "/home/container/cairn-sy-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+        );
+        let _ = std::fs::remove_file(&path);
+        Store::open(&path, Some("test".to_string())).unwrap()
+    }
+
+    #[test]
+    fn export_empty_store() {
+        let store = test_store();
+        let bundle = export_bundle(&store).unwrap();
+        assert!(bundle.facts.is_empty());
+    }
+
+    #[test]
+    fn export_import_roundtrip() {
+        let store = test_store();
+        store
+            .remember("s", "p", "o", RememberOptions::default())
+            .unwrap();
+        let bundle = export_bundle(&store).unwrap();
+        assert_eq!(bundle.facts.len(), 1);
+        let store2 = test_store();
+        let count = import_bundle(&store2, &bundle).unwrap();
+        assert_eq!(count, 1);
+        let active = store2.get_active_facts().unwrap();
+        assert_eq!(active.len(), 1);
+    }
 }

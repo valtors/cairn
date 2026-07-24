@@ -7,8 +7,8 @@
 //! facts with confidence >= 0.8 are never forgotten unless `force` is set.
 //! the agent's direct knowledge is protected. inferred patterns are not.
 
-use chrono::{DateTime, Utc};
 use cairn_store::{Fact, Store};
+use chrono::{DateTime, Utc};
 
 pub struct ForgetOptions {
     pub older_than_days: Option<i64>,
@@ -54,7 +54,11 @@ pub fn decay_score(fact: &Fact) -> f64 {
 }
 
 pub fn run(store: &Store, opts: ForgetOptions) -> Result<ForgetResult, String> {
-    let max_confidence = if opts.force { 2.0 } else { opts.min_confidence.unwrap_or(0.8) };
+    let max_confidence = if opts.force {
+        2.0
+    } else {
+        opts.min_confidence.unwrap_or(0.8)
+    };
     let days = opts.older_than_days.unwrap_or(30);
 
     let candidates = store.get_stale_facts(days, max_confidence)?;
@@ -65,7 +69,10 @@ pub fn run(store: &Store, opts: ForgetOptions) -> Result<ForgetResult, String> {
     for fact in candidates {
         let score = decay_score(&fact);
         if score < 0.1 && (fact.confidence < max_confidence || opts.force) {
-            reasons.push((fact.id.clone(), format!("decay={:.3} conf={:.2}", score, fact.confidence)));
+            reasons.push((
+                fact.id.clone(),
+                format!("decay={:.3} conf={:.2}", score, fact.confidence),
+            ));
             if !opts.dry_run {
                 store.tombstone(&fact.id, &format!("decay={:.3}", score))?;
             }
@@ -75,5 +82,113 @@ pub fn run(store: &Store, opts: ForgetOptions) -> Result<ForgetResult, String> {
         }
     }
 
-    Ok(ForgetResult { forgotten, kept, reasons })
+    Ok(ForgetResult {
+        forgotten,
+        kept,
+        reasons,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cairn_store::{RememberOptions, Store};
+
+    fn test_store() -> Store {
+        let path = format!(
+            "/home/container/cairn-f-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_nanos()
+        );
+        let _ = std::fs::remove_file(&path);
+        Store::open(&path, Some("test".to_string())).unwrap()
+    }
+
+    #[test]
+    fn forget_low_confidence() {
+        let store = test_store();
+        store
+            .remember(
+                "s",
+                "p",
+                "o",
+                RememberOptions {
+                    confidence: Some(0.2),
+                    source: Some("inferred".to_string()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let result = run(
+            &store,
+            ForgetOptions {
+                min_confidence: Some(0.8),
+                older_than_days: Some(0),
+                dry_run: false,
+                force: false,
+            },
+        )
+        .unwrap();
+        assert!(!result.forgotten.is_empty());
+    }
+
+    #[test]
+    fn forget_dry_run() {
+        let store = test_store();
+        store
+            .remember(
+                "s",
+                "p",
+                "o",
+                RememberOptions {
+                    confidence: Some(0.2),
+                    source: Some("inferred".to_string()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let result = run(
+            &store,
+            ForgetOptions {
+                min_confidence: Some(0.8),
+                older_than_days: Some(0),
+                dry_run: true,
+                force: false,
+            },
+        )
+        .unwrap();
+        assert!(!result.forgotten.is_empty());
+        let active = store.get_active_facts().unwrap();
+        assert!(!active.is_empty());
+    }
+
+    #[test]
+    fn forget_protects_high_confidence() {
+        let store = test_store();
+        store
+            .remember(
+                "s",
+                "p",
+                "o",
+                RememberOptions {
+                    confidence: Some(1.0),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let result = run(
+            &store,
+            ForgetOptions {
+                min_confidence: Some(0.8),
+                older_than_days: Some(0),
+                dry_run: false,
+                force: false,
+            },
+        )
+        .unwrap();
+        assert!(result.forgotten.is_empty());
+    }
 }

@@ -10,9 +10,9 @@
 //!   cairn import --file my-memory.json
 //!   cairn serve    (runs as MCP server on stdio)
 
-use clap::{Parser, Subcommand};
 use cairn_mcp::{dispatch, list_tools};
 use cairn_store::{RememberOptions, Store};
+use clap::{Parser, Subcommand};
 use serde_json::json;
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
@@ -97,7 +97,13 @@ fn main() {
     };
 
     match cli.command {
-        Commands::Remember { subject, predicate, object, confidence, source } => {
+        Commands::Remember {
+            subject,
+            predicate,
+            object,
+            confidence,
+            source,
+        } => {
             let opts = RememberOptions {
                 valid_from: None,
                 recorded_at: None,
@@ -110,7 +116,12 @@ fn main() {
                 Err(e) => eprintln!("error: {}", e),
             }
         }
-        Commands::Recall { query, depth, limit, as_of } => {
+        Commands::Recall {
+            query,
+            depth,
+            limit,
+            as_of,
+        } => {
             let args = json!({
                 "query": query,
                 "depth": depth,
@@ -122,7 +133,11 @@ fn main() {
                 Err(e) => eprintln!("error: {}", e),
             }
         }
-        Commands::Forget { older_than_days, dry_run, force } => {
+        Commands::Forget {
+            older_than_days,
+            dry_run,
+            force,
+        } => {
             let args = json!({
                 "older_than_days": older_than_days,
                 "dry_run": dry_run,
@@ -133,12 +148,10 @@ fn main() {
                 Err(e) => eprintln!("error: {}", e),
             }
         }
-        Commands::Export => {
-            match dispatch(&store, "export_memory", &json!({})) {
-                Ok(result) => println!("{}", serde_json::to_string_pretty(&result).unwrap()),
-                Err(e) => eprintln!("error: {}", e),
-            }
-        }
+        Commands::Export => match dispatch(&store, "export_memory", &json!({})) {
+            Ok(result) => println!("{}", serde_json::to_string_pretty(&result).unwrap()),
+            Err(e) => eprintln!("error: {}", e),
+        },
         Commands::Import { file } => {
             let content = match std::fs::read_to_string(&file) {
                 Ok(c) => c,
@@ -214,11 +227,13 @@ fn run_mcp_server(store: &Store) {
                 "result": { "tools": list_tools() }
             }),
             "tools/call" => {
-                let tool = request.get("params")
+                let tool = request
+                    .get("params")
                     .and_then(|p| p.get("name"))
                     .and_then(|n| n.as_str())
                     .unwrap_or("");
-                let args = request.get("params")
+                let args = request
+                    .get("params")
                     .and_then(|p| p.get("arguments"))
                     .cloned()
                     .unwrap_or(json!({}));
