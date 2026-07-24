@@ -96,7 +96,7 @@ mod tests {
 
     fn test_store() -> Store {
         let path = format!(
-            "/home/container/cairn-f-{}-{}.db",
+            "/tmp/cairn-{}-{}.db",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
