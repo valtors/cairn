@@ -3,12 +3,12 @@ name = "cairn-traverse"
 description = "graph traversal for cairn agent memory"
 license = "MIT"
 repository = "https://github.com/valtors/cairn"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
 rusqlite = { workspace = true }
-cairn-store = { path = "../store", version = "0.1.0" }
+cairn-store = { path = "../store", version = "0.1.1" }
 
 [dev-dependencies]
 tempfile = "3"

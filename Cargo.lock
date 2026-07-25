@@ -104,7 +104,7 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 name = "cairn"
 version = "0.1.0"
 dependencies = [
- "cairn-extract",
+ "cairn-extract-lib",
  "cairn-forget",
  "cairn-mcp",
  "cairn-query",
@@ -113,7 +113,6 @@ dependencies = [
  "cairn-traverse",
  "chrono",
  "clap",
- "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
@@ -121,7 +120,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairn-extract"
+name = "cairn-extract-lib"
 version = "0.1.0"
 dependencies = [
  "regex",
@@ -130,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "cairn-forget"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cairn-store",
  "chrono",
@@ -139,9 +138,9 @@ dependencies = [
 
 [[package]]
 name = "cairn-mcp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
- "cairn-extract",
+ "cairn-extract-lib",
  "cairn-forget",
  "cairn-query",
  "cairn-store",
@@ -152,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "cairn-query"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cairn-store",
  "cairn-traverse",
@@ -163,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "cairn-store"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "hostname",
@@ -176,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "cairn-sync"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cairn-store",
  "serde",
@@ -186,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "cairn-traverse"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cairn-store",
  "rusqlite",
@@ -438,7 +437,6 @@ version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c10584274047cb335c23d3e61bcef8e323adae7c5c8c760540f73610177fc3f"
 dependencies = [
- "cc",
  "pkg-config",
  "vcpkg",
 ]

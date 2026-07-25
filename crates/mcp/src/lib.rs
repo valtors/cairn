@@ -7,7 +7,7 @@
 //! protocol: JSON-RPC 2.0 over stdio. no HTTP, no SSE, no WebSocket.
 //! the agent talks, cairn listens, cairn answers.
 
-use cairn_extract::extract_from_text;
+use cairn_extract_lib::extract_from_text;
 use cairn_forget::{run as run_forget, ForgetOptions};
 use cairn_query::{query, QueryOptions};
 use cairn_store::{RememberOptions, Store};

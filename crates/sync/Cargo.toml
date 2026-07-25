@@ -3,11 +3,11 @@ name = "cairn-sync"
 description = "federated sync with vector clocks for cairn"
 license = "MIT"
 repository = "https://github.com/valtors/cairn"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-cairn-store = { path = "../store", version = "0.1.0" }
+cairn-store = { path = "../store", version = "0.1.1" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

@@ -3,16 +3,16 @@ name = "cairn-mcp"
 description = "MCP server for cairn agent memory"
 license = "MIT"
 repository = "https://github.com/valtors/cairn"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-cairn-store = { path = "../store", version = "0.1.0" }
-cairn-query = { path = "../query", version = "0.1.0" }
-cairn-forget = { path = "../forget", version = "0.1.0" }
-cairn-extract = { path = "../extract", version = "0.1.0" }
-serde = { workspace = true }
-serde_json = { workspace = true }
+cairn-store = { path = "../store", version = "0.1.1" }
+cairn-query = { path = "../query", version = "0.1.1" }
+cairn-forget = { path = "../forget", version = "0.1.1" }
+cairn-extract-lib = { path = "../extract", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3"

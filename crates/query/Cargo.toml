@@ -3,12 +3,12 @@ name = "cairn-query"
 description = "semantic query engine for cairn agent memory"
 license = "MIT"
 repository = "https://github.com/valtors/cairn"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-cairn-store = { path = "../store", version = "0.1.0" }
-cairn-traverse = { path = "../traverse", version = "0.1.0" }
+cairn-store = { path = "../store", version = "0.1.1" }
+cairn-traverse = { path = "../traverse", version = "0.1.1" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

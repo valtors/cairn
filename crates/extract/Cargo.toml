@@ -1,5 +1,5 @@
 [package]
-name = "cairn-extract"
+name = "cairn-extract-lib"
 description = "pattern-based fact extraction for cairn"
 license = "MIT"
 repository = "https://github.com/valtors/cairn"
