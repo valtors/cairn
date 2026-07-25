@@ -233,3 +233,123 @@ pub fn dispatch(store: &Store, tool: &str, args: &Value) -> Result<Value, String
         _ => Err(format!("unknown tool: {}", tool)),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cairn_store::Store;
+    use serde_json::json;
+    use tempfile::tempdir;
+
+    fn test_store() -> Store {
+        let dir = tempdir().unwrap();
+        Store::open(dir.path().join("test.db"), None).unwrap()
+    }
+
+    #[test]
+    fn test_remember_basic() {
+        let store = test_store();
+        let args = json!({"subject": "alice", "predicate": "knows", "object": "bob"});
+        let result = handle_remember(&store, &args).unwrap();
+        assert_eq!(result["status"], "remembered");
+        assert!(result["id"].is_string() || result["id"].as_i64().is_some());
+    }
+
+    #[test]
+    fn test_remember_missing_subject() {
+        let store = test_store();
+        let args = json!({"predicate": "knows", "object": "bob"});
+        let result = handle_remember(&store, &args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "missing subject");
+    }
+
+    #[test]
+    fn test_remember_missing_predicate() {
+        let store = test_store();
+        let args = json!({"subject": "alice", "object": "bob"});
+        let result = handle_remember(&store, &args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "missing predicate");
+    }
+
+    #[test]
+    fn test_remember_missing_object() {
+        let store = test_store();
+        let args = json!({"subject": "alice", "predicate": "knows"});
+        let result = handle_remember(&store, &args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "missing object");
+    }
+
+    #[test]
+    fn test_remember_with_confidence() {
+        let store = test_store();
+        let args = json!({"subject": "alice", "predicate": "knows", "object": "bob", "confidence": 0.9, "source": "user"});
+        let result = handle_remember(&store, &args).unwrap();
+        assert_eq!(result["status"], "remembered");
+    }
+
+    #[test]
+    fn test_recall_missing_query() {
+        let store = test_store();
+        let args = json!({});
+        let result = handle_recall(&store, &args);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "missing query");
+    }
+
+    #[test]
+    fn test_dispatch_unknown_tool() {
+        let store = test_store();
+        let result = dispatch(&store, "unknown_tool", &json!({}));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unknown tool"));
+    }
+
+    #[test]
+    fn test_dispatch_remember() {
+        let store = test_store();
+        let args = json!({"subject": "x", "predicate": "y", "object": "z"});
+        let result = dispatch(&store, "remember", &args).unwrap();
+        assert_eq!(result["status"], "remembered");
+    }
+
+    #[test]
+    fn test_dispatch_forget() {
+        let store = test_store();
+        let result = dispatch(&store, "forget", &json!({"dry_run": true}));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_list_tools() {
+        let tools = list_tools();
+        assert!(!tools.is_empty());
+        let names: Vec<String> = tools
+            .iter()
+            .filter_map(|t| t["name"].as_str().map(|s| s.to_string()))
+            .collect();
+        assert!(names.contains(&"remember".to_string()));
+        assert!(names.contains(&"cairn".to_string()));
+        assert!(names.contains(&"forget".to_string()));
+        assert!(names.contains(&"extract".to_string()));
+    }
+
+    #[test]
+    fn test_dispatch_export() {
+        let store = test_store();
+        let args = json!({"subject": "x", "predicate": "y", "object": "z"});
+        dispatch(&store, "remember", &args).unwrap();
+        let result = dispatch(&store, "export_memory", &json!({})).unwrap();
+        assert!(result["facts"].is_array());
+    }
+
+    #[test]
+    fn test_dispatch_extract() {
+        let store = test_store();
+        let args = json!({"text": "alice works at acme corp", "user_name": "alice"});
+        let result = dispatch(&store, "extract", &args);
+        assert!(result.is_ok());
+    }
+}

@@ -10,3 +10,6 @@ cairn-forget = { path = "../forget" }
 cairn-extract = { path = "../extract" }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
