@@ -132,3 +132,106 @@ mod tests {
         assert_eq!(active.len(), 1);
     }
 }
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+    use cairn_store::RememberOptions;
+    use tempfile::NamedTempFile;
+
+    fn setup() -> (NamedTempFile, Store) {
+        let f = NamedTempFile::new().unwrap();
+        let store = Store::open(f.path(), None).unwrap();
+        (f, store)
+    }
+
+    #[test]
+    fn export_empty_store() {
+        let (_f, store) = setup();
+        let bundle = export_bundle(&store).unwrap();
+        assert_eq!(bundle.facts.len(), 0);
+        assert_eq!(bundle.device_id, "local");
+    }
+
+    #[test]
+    fn export_with_facts() {
+        let (_f, store) = setup();
+        store
+            .remember("a", "knows", "b", RememberOptions::default())
+            .unwrap();
+        let bundle = export_bundle(&store).unwrap();
+        assert_eq!(bundle.facts.len(), 1);
+        assert_eq!(bundle.facts[0].subject, "a");
+    }
+
+    #[test]
+    fn import_empty_bundle() {
+        let (_f, store) = setup();
+        let bundle = SyncBundle {
+            device_id: "remote".to_string(),
+            facts: vec![],
+            last_sync_counter: 0,
+        };
+        let count = import_bundle(&store, &bundle).unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn import_new_facts() {
+        let (_f, store) = setup();
+        let fact = Fact {
+            id: "test-1".to_string(),
+            subject: "x".to_string(),
+            predicate: "knows".to_string(),
+            object: "y".to_string(),
+            valid_from: "2024-01-01T00:00:00Z".to_string(),
+            valid_until: None,
+            recorded_at: "2024-01-01T00:00:00Z".to_string(),
+            confidence: 1.0,
+            source: "test".to_string(),
+            tombstone: false,
+            tombstone_reason: None,
+            access_count: 0,
+            last_accessed: None,
+            device_id: "remote".to_string(),
+            vector_clock: "{}".to_string(),
+        };
+        let bundle = SyncBundle {
+            device_id: "remote".to_string(),
+            facts: vec![fact],
+            last_sync_counter: 0,
+        };
+        let count = import_bundle(&store, &bundle).unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn sync_bundle_serialization() {
+        let bundle = SyncBundle {
+            device_id: "device1".to_string(),
+            facts: vec![],
+            last_sync_counter: 42,
+        };
+        let json = serde_json::to_string(&bundle).unwrap();
+        assert!(json.contains("device1"));
+        assert!(json.contains("42"));
+    }
+
+    #[test]
+    fn export_import_roundtrip() {
+        let (_f, store1) = setup();
+        let (_f2, store2) = setup();
+
+        store1
+            .remember("a", "knows", "b", RememberOptions::default())
+            .unwrap();
+        store1
+            .remember("c", "knows", "d", RememberOptions::default())
+            .unwrap();
+
+        let bundle = export_bundle(&store1).unwrap();
+        let count = import_bundle(&store2, &bundle).unwrap();
+        assert_eq!(count, 2);
+        assert_eq!(store2.all_facts().unwrap().len(), 2);
+    }
+}
