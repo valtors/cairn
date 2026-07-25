@@ -1,13 +1,16 @@
 [package]
 name = "cairn-mcp"
+description = "MCP server for cairn agent memory"
+license = "MIT"
+repository = "https://github.com/valtors/cairn"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cairn-store = { path = "../store" }
-cairn-query = { path = "../query" }
-cairn-forget = { path = "../forget" }
-cairn-extract = { path = "../extract" }
+cairn-store = { path = "../store", version = "0.1.0" }
+cairn-query = { path = "../query", version = "0.1.0" }
+cairn-forget = { path = "../forget", version = "0.1.0" }
+cairn-extract = { path = "../extract", version = "0.1.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

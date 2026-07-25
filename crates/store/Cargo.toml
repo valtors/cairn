@@ -1,5 +1,8 @@
 [package]
 name = "cairn-store"
+description = "temporal sqlite store for cairn agent memory"
+license = "MIT"
+repository = "https://github.com/valtors/cairn"
 version = "0.1.0"
 edition = "2021"
 

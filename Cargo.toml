@@ -16,13 +16,13 @@ serde_json = "1"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
-cairn-store = { path = "crates/store" }
-cairn-mcp = { path = "crates/mcp" }
-cairn-query = { path = "crates/query" }
-cairn-traverse = { path = "crates/traverse" }
-cairn-forget = { path = "crates/forget" }
-cairn-extract = { path = "crates/extract" }
-cairn-sync = { path = "crates/sync" }
+cairn-store = { path = "crates/store", version = "0.1.0" }
+cairn-mcp = { path = "crates/mcp", version = "0.1.0" }
+cairn-query = { path = "crates/query", version = "0.1.0" }
+cairn-traverse = { path = "crates/traverse", version = "0.1.0" }
+cairn-forget = { path = "crates/forget", version = "0.1.0" }
+cairn-extract = { path = "crates/extract", version = "0.1.0" }
+cairn-sync = { path = "crates/sync", version = "0.1.0" }
 
 [workspace]
 members = [
