@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/valtors/cairn/actions/workflows/ci.yml/badge.svg)](https://github.com/valtors/cairn/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0F172A?style=flat-square)](./LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.75+-CE422B?style=flat-square)](https://www.rust-lang.org/)
+[![tests](https://img.shields.io/badge/tests-63-green?style=flat-square)]()
 
 agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
 
@@ -16,6 +18,16 @@ MCP gave agents tools. cairn gives them a path.
 ## why
 
 every agent memory system today is either a walled garden (mem0, zep cloud) or a heavy dependency (neo4j, postgres). none of them talk to each other. your memory is locked into whichever platform you picked first. cairn is the opposite: one binary, one file, zero dependencies, works with any agent that speaks MCP.
+
+| | mem0 | zep | neo4j | cairn |
+|---|---|---|---|---|
+| setup | pip + api key | docker + api key | docker + cypher | one binary |
+| dependencies | python, redis | docker, postgres | jvm, 2gb+ ram | sqlite |
+| protocol | rest api | rest api | cypher/bolt | MCP |
+| temporal queries | no | limited | no | yes |
+| forgetting | no | no | no | yes |
+| federated sync | no | no | no | yes |
+| works offline | no | no | yes | yes |
 
 ## how it works
 
@@ -58,12 +70,24 @@ cairn/
 
 one sqlite file. one binary. zero external services.
 
+## install
+
+```bash
+cargo install cairn
+```
+
+or build from source:
+
+```bash
+git clone https://github.com/valtors/cairn
+cd cairn
+cargo build --release
+cp target/release/cairn /usr/local/bin/
+```
+
 ## usage
 
 ```bash
-# install
-cargo install cairn
-
 # run as MCP server (any MCP-compatible agent connects)
 cairn serve
 
@@ -73,6 +97,27 @@ cairn recall "what os does tamish use"
 cairn forget --older-than 30d
 cairn export > my-memory.json
 cairn import < my-memory.json
+```
+
+### with claude desktop
+
+```json
+{
+  "mcpServers": {
+    "cairn": {
+      "command": "cairn",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+## tests
+
+63 tests across 6 crates. all pass.
+
+```bash
+cargo test --workspace
 ```
 
 ## license
