@@ -151,3 +151,51 @@ mod tests {
         assert!(result.facts.is_empty());
     }
 }
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+    use cairn_store::{RememberOptions, Store};
+    use tempfile::NamedTempFile;
+
+    fn setup() -> (NamedTempFile, Store) {
+        let f = NamedTempFile::new().unwrap();
+        let store = Store::open(f.path(), None).unwrap();
+        (f, store)
+    }
+
+    #[test]
+    fn traverse_empty_graph() {
+        let (_f, store) = setup();
+        let result = traverse(store.conn(), &["nonexistent".to_string()], 3, None).unwrap();
+        assert!(result.facts.is_empty());
+        assert!(result.hops.is_empty());
+    }
+
+    #[test]
+    fn traverse_max_depth_zero() {
+        let (_f, store) = setup();
+        let result = traverse(store.conn(), &["a".to_string()], 0, None).unwrap();
+        assert!(result.facts.is_empty());
+    }
+
+    #[test]
+    fn traverse_with_as_of() {
+        let (_f, store) = setup();
+        store
+            .remember("a", "knows", "b", RememberOptions::default())
+            .unwrap();
+        let result = traverse(store.conn(), &["a".to_string()], 2, Some("2099-01-01")).unwrap();
+        assert!(result.facts.len() <= 1);
+    }
+
+    #[test]
+    fn traverse_result_serialization() {
+        let tr = TraversalResult {
+            facts: vec![],
+            hops: vec![("a".to_string(), "b".to_string())],
+        };
+        assert_eq!(tr.hops.len(), 1);
+        assert!(tr.facts.is_empty());
+    }
+}
