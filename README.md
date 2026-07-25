@@ -73,7 +73,7 @@ one sqlite file. one binary. zero external services.
 ## install
 
 ```bash
-cargo install cairn
+cargo install cairn-memory
 ```
 
 or build from source:

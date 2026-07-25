@@ -101,25 +101,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
-name = "cairn"
-version = "0.1.0"
-dependencies = [
- "cairn-extract-lib",
- "cairn-forget",
- "cairn-mcp",
- "cairn-query",
- "cairn-store",
- "cairn-sync",
- "cairn-traverse",
- "chrono",
- "clap",
- "serde",
- "serde_json",
- "tempfile",
- "uuid",
-]
-
-[[package]]
 name = "cairn-extract-lib"
 version = "0.1.0"
 dependencies = [
@@ -147,6 +128,25 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "cairn-memory"
+version = "0.1.0"
+dependencies = [
+ "cairn-extract-lib",
+ "cairn-forget",
+ "cairn-mcp",
+ "cairn-query",
+ "cairn-store",
+ "cairn-sync",
+ "cairn-traverse",
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "uuid",
 ]
 
 [[package]]
@@ -437,6 +437,7 @@ version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c10584274047cb335c23d3e61bcef8e323adae7c5c8c760540f73610177fc3f"
 dependencies = [
+ "cc",
  "pkg-config",
  "vcpkg",
 ]
