@@ -4,6 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-0F172A?style=flat-square)](./LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75+-CE422B?style=flat-square)](https://www.rust-lang.org/)
 [![tests](https://img.shields.io/badge/tests-63-green?style=flat-square)]()
+[![crates.io](https://img.shields.io/crates/v/cairn-memory?style=flat-square&label=crates.io)](https://crates.io/crates/cairn-memory)
 
 agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
 
