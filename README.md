@@ -121,6 +121,10 @@ cairn import < my-memory.json
 cargo test --workspace
 ```
 
+## tech
+
+`rust` `sqlite` `serde` `rusqlite` `MCP` `temporal triples` `vector clocks` `single binary` `zero runtime deps`
+
 ## contributing
 
 see [CONTRIBUTING.md](CONTRIBUTING.md). we welcome contributions of all kinds - bug fixes, new patterns, transport support, docs.
