@@ -8,6 +8,8 @@
 
 agent wayfinding. temporal knowledge store in one sqlite file. no neo4j, no cloud, no lock-in.
 
+[landing](https://valtors.github.io/cairn/) - [github](https://github.com/valtors/cairn)
+
 ## what
 
 cairn is a new category. not "memory" or "knowledge graph." agent wayfinding - agents that can find their way back to what they know.
